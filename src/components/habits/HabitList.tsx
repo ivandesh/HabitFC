@@ -34,21 +34,30 @@ export function HabitList() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Твої Звички</h2>
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <div className="font-oswald text-xs tracking-[0.2em] text-[#5A7090] uppercase mb-0.5">
+            · Твої ·
+          </div>
+          <h2 className="font-oswald text-2xl font-bold uppercase tracking-wide text-white leading-none">
+            Звички
+          </h2>
+        </div>
         <button
           onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-colors cursor-pointer"
+          className="font-oswald px-5 py-2.5 bg-[#00E676] hover:bg-[#00FF87] text-[#04060A] font-bold uppercase tracking-widest text-sm rounded-xl transition-all cursor-pointer glow-green-btn"
         >
           + Додати
         </button>
       </div>
 
       {habits.length === 0 ? (
-        <div className="text-center py-16 text-gray-500">
-          <div className="text-5xl mb-4">📋</div>
-          <div className="text-lg">Ще немає звичок</div>
-          <div className="text-sm mt-1">Додай звичку, щоб заробляти монети!</div>
+        <div className="text-center py-20 border border-dashed border-[#1A2336] rounded-2xl">
+          <div className="text-5xl mb-4 opacity-40">📋</div>
+          <div className="font-oswald text-lg uppercase tracking-wide text-[#5A7090]">
+            Ще немає звичок
+          </div>
+          <div className="text-sm mt-2 text-[#3A4A5A]">Додай звичку, щоб заробляти монети!</div>
         </div>
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>

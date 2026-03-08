@@ -9,7 +9,11 @@ function NavBar() {
   const resetAll = useAppStore(state => state.resetAll)
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
-    `px-4 py-2 rounded-xl font-semibold transition-colors ${isActive ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white hover:bg-gray-800'}`
+    `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
+      isActive
+        ? 'text-[#00E676] border-[#00E676]'
+        : 'text-[#5A7090] border-transparent hover:text-[#E8F0FF] hover:border-[#1A2336]'
+    }`
 
   function handleReset() {
     if (window.confirm('Скинути весь прогрес? Це видалить усі звички, монети та картки.')) {
@@ -18,16 +22,21 @@ function NavBar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-3 py-2 flex items-center gap-1 sm:gap-2">
-        <span className="text-xl font-bold text-white mr-2 shrink-0">⚽ <span className="hidden sm:inline">HabitFC</span></span>
+    <nav className="sticky top-0 z-40 bg-[#04060A]/95 backdrop-blur-md border-b border-[#1A2336]">
+      <div className="max-w-7xl mx-auto px-4 flex items-center gap-1">
+        <span className="font-oswald text-xl font-bold mr-3 py-3 shrink-0 tracking-wider">
+          <span className="text-[#00E676]">⚽</span>{' '}
+          <span className="hidden sm:inline text-white">
+            HABIT<span className="text-[#00E676]">FC</span>
+          </span>
+        </span>
         <NavLink to="/" end className={linkClass}>Головна</NavLink>
         <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
         <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
         <div className="ml-auto shrink-0">
           <button
             onClick={handleReset}
-            className="p-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
+            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
             title="Скинути прогрес"
           >
             🔄
@@ -41,7 +50,7 @@ function NavBar() {
 export default function App() {
   return (
     <BrowserRouter basename="/HabitFC">
-      <div className="min-h-screen bg-gray-950">
+      <div className="min-h-screen bg-[#04060A] stadium-lines">
         <NavBar />
         <Routes>
           <Route path="/" element={<Dashboard />} />
