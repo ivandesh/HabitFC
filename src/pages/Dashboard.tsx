@@ -11,10 +11,10 @@ export function Dashboard() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">Трекер Звичок</h1>
-          <p className="text-gray-400 mt-1">Виконуй звички, заробляй монети та збирай картки</p>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold">Трекер Звичок</h1>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">Виконуй звички, заробляй монети та збирай картки</p>
         </div>
         <CoinDisplay />
       </div>

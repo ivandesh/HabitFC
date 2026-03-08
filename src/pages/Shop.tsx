@@ -18,15 +18,15 @@ export function Shop() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-3xl font-bold">Магазин карток</h1>
-          <p className="text-gray-400 mt-1">Витрачай монети на пакети карток</p>
+      <div className="flex items-start justify-between gap-3 mb-8">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold">Магазин карток</h1>
+          <p className="text-gray-400 mt-1 text-sm sm:text-base">Витрачай монети на пакети карток</p>
         </div>
         <CoinDisplay />
       </div>
 
-      <div className="flex flex-wrap gap-6 justify-center">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-4 sm:gap-6 justify-center items-stretch sm:items-start">
         {packs.map(pack => (
           <PackCard
             key={pack.id}

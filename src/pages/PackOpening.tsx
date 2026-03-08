@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import type { Footballer, Pack } from '../types'
 import { useAppStore } from '../store/useAppStore'
 import { FootballerCard } from '../components/cards/FootballerCard'
+import { CoinIcon } from '../components/ui/CoinIcon'
 
 interface LocationState {
   pack: Pack
@@ -68,7 +69,7 @@ export function PackOpening() {
       <div className="flex flex-col items-center justify-center min-h-screen gap-6 px-4">
         <div className="text-7xl">📦</div>
         <h1 className="text-3xl font-bold">{pack.name}</h1>
-        <p className="text-gray-400 text-lg">{pack.cardCount} карток за <span className="text-yellow-400 font-bold">🪙 {pack.cost}</span></p>
+        <p className="text-gray-400 text-lg flex items-center gap-2">{pack.cardCount} карток за <span className="text-yellow-400 font-bold flex items-center gap-1"><CoinIcon size={18} />{pack.cost}</span></p>
         <div className="flex gap-4">
           <button onClick={() => navigate('/shop')} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold cursor-pointer">Скасувати</button>
           <button onClick={startOpening} className="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold cursor-pointer text-lg">Відкрити пакет!</button>
@@ -99,7 +100,7 @@ export function PackOpening() {
                       animate={{ opacity: 1, y: -20 }}
                       className="absolute -top-4 left-1/2 -translate-x-1/2 bg-yellow-500 text-black text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap z-10"
                     >
-                      +{cardRefunds[i]}🪙 повернення
+                      +{cardRefunds[i]} повернення
                     </motion.div>
                   )}
                 </motion.div>
@@ -123,7 +124,7 @@ export function PackOpening() {
           className="flex flex-col items-center gap-4"
         >
           {totalRefund > 0 && (
-            <p className="text-yellow-400 font-semibold text-lg">Повернення за дублікати: +{totalRefund} 🪙</p>
+            <p className="text-yellow-400 font-semibold text-lg flex items-center gap-2">Повернення за дублікати: +{totalRefund} <CoinIcon size={18} /></p>
           )}
           <div className="flex gap-4">
             <button onClick={() => navigate('/shop')} className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-bold cursor-pointer">Назад до магазину</button>

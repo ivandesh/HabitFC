@@ -1,4 +1,5 @@
 import type { Pack } from '../../types'
+import { CoinIcon } from '../ui/CoinIcon'
 
 interface Props {
   pack: Pack
@@ -16,7 +17,7 @@ export function PackCard({ pack, onBuy, canAfford }: Props) {
   const cfg = packConfig[pack.id as keyof typeof packConfig] ?? packConfig.basic
 
   return (
-    <div className={`border-2 ${cfg.color} rounded-2xl p-6 flex flex-col items-center gap-4 w-64`}>
+    <div className={`border-2 ${cfg.color} rounded-2xl p-6 flex flex-col items-center gap-4 w-full sm:w-64`}>
       <div className="text-6xl">{cfg.emoji}</div>
       <div className="text-center">
         <div className="font-bold text-xl">{pack.name}</div>
@@ -31,9 +32,9 @@ export function PackCard({ pack, onBuy, canAfford }: Props) {
       <button
         onClick={onBuy}
         disabled={!canAfford}
-        className={`w-full py-3 rounded-xl font-bold text-white transition-all ${canAfford ? cfg.buttonColor + ' cursor-pointer' : 'bg-gray-700 opacity-50 cursor-not-allowed'}`}
+        className={`w-full py-3 rounded-xl font-bold text-white transition-all flex items-center justify-center gap-2 ${canAfford ? cfg.buttonColor + ' cursor-pointer' : 'bg-gray-700 opacity-50 cursor-not-allowed'}`}
       >
-        🪙 {pack.cost} coins
+        <CoinIcon size={18} /> {pack.cost} монет
       </button>
     </div>
   )

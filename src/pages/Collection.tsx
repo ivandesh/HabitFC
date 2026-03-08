@@ -53,10 +53,10 @@ export function Collection() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Моя Колекція</h1>
-          <p className="text-gray-400 mt-1">{ownedCount}/{footballers.length} карток ({pct}% завершено)</p>
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <div className="min-w-0">
+          <h1 className="text-2xl sm:text-3xl font-bold">Моя Колекція</h1>
+          <p className="text-gray-400 mt-1 text-sm">{ownedCount}/{footballers.length} карток ({pct}% завершено)</p>
         </div>
         <CoinDisplay />
       </div>

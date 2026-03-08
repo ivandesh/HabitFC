@@ -1,6 +1,7 @@
 import type { Habit } from '../../types'
 import { useAppStore } from '../../store/useAppStore'
 import { StreakBadge } from '../ui/StreakBadge'
+import { CoinIcon } from '../ui/CoinIcon'
 import { isCompletedToday, streakMultiplier } from '../../lib/streaks'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -67,16 +68,20 @@ export function HabitCard({ habit }: Props) {
       {/* Stats row */}
       <div className="grid grid-cols-3 divide-x divide-gray-800 border-t border-gray-800 text-center text-xs">
         <div className="px-2 py-2">
-          <div className="text-gray-500 mb-0.5">Вартість</div>
-          <div className="font-bold text-yellow-400">🪙 {habit.coinValue}</div>
+          <div className="text-gray-500 mb-1">Вартість</div>
+          <div className="font-bold text-yellow-400 flex items-center justify-center gap-1">
+            <CoinIcon size={13} /> {habit.coinValue}
+          </div>
         </div>
         <div className="px-2 py-2">
-          <div className="text-gray-500 mb-0.5">Бонус</div>
+          <div className="text-gray-500 mb-1">Бонус</div>
           <div className={`font-bold ${multiplier > 1 ? 'text-orange-400' : 'text-gray-500'}`}>×{multiplier}</div>
         </div>
         <div className="px-2 py-2">
-          <div className="text-gray-500 mb-0.5">Заробіток</div>
-          <div className="font-bold text-green-400">+{earned}</div>
+          <div className="text-gray-500 mb-1">Заробіток</div>
+          <div className="font-bold text-green-400 flex items-center justify-center gap-1">
+            +{earned}
+          </div>
         </div>
       </div>
 

@@ -19,18 +19,18 @@ function NavBar() {
 
   return (
     <nav className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800">
-      <div className="max-w-7xl mx-auto px-4 py-3 flex items-center gap-2">
-        <span className="text-xl font-bold text-white mr-4">⚽ HabitFC</span>
+      <div className="max-w-7xl mx-auto px-3 py-2 flex items-center gap-1 sm:gap-2">
+        <span className="text-xl font-bold text-white mr-2 shrink-0">⚽ <span className="hidden sm:inline">HabitFC</span></span>
         <NavLink to="/" end className={linkClass}>Головна</NavLink>
         <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
         <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
-        <div className="ml-auto">
+        <div className="ml-auto shrink-0">
           <button
             onClick={handleReset}
-            className="px-3 py-2 rounded-xl text-sm font-semibold text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
+            className="p-2 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-400/10 transition-colors cursor-pointer"
             title="Скинути прогрес"
           >
-            🔄 Скинути
+            🔄
           </button>
         </div>
       </div>

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
+import { CoinIcon } from '../ui/CoinIcon'
 
 const ICONS = ['🧘', '🎸', '📚', '🏃', '💪', '🧠', '✍️', '🥗', '💧', '🎨', '🎯', '🌿', '🏊', '🚴', '🎵', '📖', '🛏️', '🧹']
 
@@ -58,9 +59,9 @@ export function AddHabitModal({ onClose }: Props) {
                   key={v}
                   type="button"
                   onClick={() => setCoinValue(v)}
-                  className={`px-3 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer ${coinValue === v ? 'bg-yellow-500 text-black scale-105' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+                  className={`px-3 py-2 rounded-xl font-bold text-sm transition-all cursor-pointer flex items-center gap-1 ${coinValue === v ? 'bg-yellow-500 text-black scale-105' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
                 >
-                  🪙 {v}
+                  <CoinIcon size={14} /> {v}
                 </button>
               ))}
             </div>
