@@ -125,8 +125,8 @@ function PackVisual({ pack }: { pack: Pack }) {
           <span className="text-[10px] font-bold text-blue-400">{pack.weights.rare}%</span>
         </div>
         <div className="flex justify-between items-center">
-          <span className="font-oswald text-[10px] tracking-wider text-purple-400 uppercase">Епічна</span>
-          <span className="text-[10px] font-bold text-purple-400">{pack.weights.epic}%</span>
+          <span className="font-oswald text-[10px] tracking-wider text-pink-400 uppercase">Епічна</span>
+          <span className="text-[10px] font-bold text-pink-400">{pack.weights.epic}%</span>
         </div>
         <div className="flex justify-between items-center">
           <span className="font-oswald text-[10px] tracking-wider text-yellow-400 uppercase">Легендарна</span>
@@ -470,7 +470,7 @@ export function PackOpening() {
                   </button>
                   <button
                     onClick={() => navigate('/collection')}
-                    className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                    className="px-6 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
                   >
                     Переглянути колекцію
                   </button>

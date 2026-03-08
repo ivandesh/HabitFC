@@ -80,8 +80,8 @@ export function PackCard({ pack, onBuy, canAfford }: Props) {
           <span className="font-bold text-blue-400">{pack.weights.rare}%</span>
         </div>
         <div className="flex justify-between items-center text-xs">
-          <span className="font-oswald uppercase tracking-wider text-purple-400">Епічна</span>
-          <span className="font-bold text-purple-400">{pack.weights.epic}%</span>
+          <span className="font-oswald uppercase tracking-wider text-pink-400">Епічна</span>
+          <span className="font-bold text-pink-400">{pack.weights.epic}%</span>
         </div>
         <div className="flex justify-between items-center text-xs">
           <span className="font-oswald uppercase tracking-wider text-yellow-400">Легендарна</span>

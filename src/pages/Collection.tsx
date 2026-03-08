@@ -11,14 +11,14 @@ const RARITIES: (Rarity | 'all')[] = ['all', 'legendary', 'epic', 'rare', 'commo
 const lockedStyle: Record<Rarity, string> = {
   common:    'border-[#2A3441] bg-[#0A0F1A] glow-common',
   rare:      'border-blue-500/40 bg-[#050B1A] glow-rare',
-  epic:      'border-purple-500/40 bg-[#0A0514] glow-epic',
+  epic:      'border-pink-500/40 bg-[#140510] glow-epic',
   legendary: 'border-yellow-400/40 bg-[#0D0900] glow-legendary',
 }
 
 const lockedLabel: Record<Rarity, { text: string; color: string }> = {
   common:    { text: 'ЗВИЧАЙНА',   color: 'text-[#5A7090]' },
   rare:      { text: 'РІДКІСНА',   color: 'text-blue-400' },
-  epic:      { text: 'ЕПІЧНА',     color: 'text-purple-400' },
+  epic:      { text: 'ЕПІЧНА',     color: 'text-pink-400' },
   legendary: { text: 'ЛЕГЕНДАРНА', color: 'text-yellow-400' },
 }
 
@@ -37,7 +37,7 @@ function LockedCard({ rarity }: { rarity: Rarity }) {
 const filterConfig: Record<string, { active: string; label: string }> = {
   all:       { active: 'bg-[#00E676] text-[#04060A]', label: 'Усі' },
   legendary: { active: 'bg-yellow-500 text-[#04060A]', label: 'Легендарна' },
-  epic:      { active: 'bg-purple-600 text-white', label: 'Епічна' },
+  epic:      { active: 'bg-pink-600 text-white', label: 'Епічна' },
   rare:      { active: 'bg-blue-600 text-white', label: 'Рідкісна' },
   common:    { active: 'bg-[#3A4A5A] text-white', label: 'Звичайна' },
 }

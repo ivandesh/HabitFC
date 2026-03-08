@@ -19,7 +19,7 @@ const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'П
 const rarityRing: Record<string, string> = {
   common:    'ring-gray-400/70',
   rare:      'ring-blue-400/80',
-  epic:      'ring-purple-500/80',
+  epic:      'ring-pink-500/80',
   legendary: 'ring-yellow-400/90',
 }
 

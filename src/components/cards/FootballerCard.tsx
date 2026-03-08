@@ -9,7 +9,7 @@ interface Props {
 const rarityConfig = {
   common:    { border: 'border-gray-400',    bg: 'bg-gray-800',    glow: 'glow-common',    label: 'ЗВИЧАЙНА',  labelColor: 'text-gray-300' },
   rare:      { border: 'border-blue-400',    bg: 'bg-blue-950',    glow: 'glow-rare',      label: 'РІДКІСНА',  labelColor: 'text-blue-300' },
-  epic:      { border: 'border-purple-400',  bg: 'bg-purple-950',  glow: 'glow-epic',      label: 'ЕПІЧНА',    labelColor: 'text-purple-300' },
+  epic:      { border: 'border-pink-400',    bg: 'bg-pink-950',    glow: 'glow-epic',      label: 'ЕПІЧНА',    labelColor: 'text-pink-300' },
   legendary: { border: 'border-yellow-300',  bg: 'bg-yellow-950',  glow: 'glow-legendary', label: 'ЛЕГЕНДАРНА', labelColor: 'text-yellow-300' },
 }
 
