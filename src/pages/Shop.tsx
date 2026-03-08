@@ -31,7 +31,7 @@ export function Shop() {
         <CoinDisplay />
       </div>
 
-      <div className="flex flex-col sm:flex-row flex-wrap gap-5 justify-center items-stretch sm:items-start">
+      <div className="flex flex-col sm:flex-row flex-wrap gap-5 justify-center items-stretch">
         {packs.map(pack => (
           <PackCard
             key={pack.id}

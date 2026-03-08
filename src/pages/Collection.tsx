@@ -36,10 +36,10 @@ function LockedCard({ rarity }: { rarity: Rarity }) {
 
 const filterConfig: Record<string, { active: string; label: string }> = {
   all:       { active: 'bg-[#00E676] text-[#04060A]', label: 'Усі' },
-  legendary: { active: 'bg-yellow-500 text-[#04060A]', label: 'Legendary' },
-  epic:      { active: 'bg-purple-600 text-white', label: 'Epic' },
-  rare:      { active: 'bg-blue-600 text-white', label: 'Rare' },
-  common:    { active: 'bg-[#3A4A5A] text-white', label: 'Common' },
+  legendary: { active: 'bg-yellow-500 text-[#04060A]', label: 'Легендарна' },
+  epic:      { active: 'bg-purple-600 text-white', label: 'Епічна' },
+  rare:      { active: 'bg-blue-600 text-white', label: 'Рідкісна' },
+  common:    { active: 'bg-[#3A4A5A] text-white', label: 'Звичайна' },
 }
 
 export function Collection() {
