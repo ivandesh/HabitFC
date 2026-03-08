@@ -1,0 +1,111 @@
+import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
+import type { Habit, Footballer, AppState } from '../types'
+import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
+import { duplicateRefund } from '../lib/gacha'
+
+interface AppStore extends AppState {
+  // Habit actions
+  addHabit: (habit: Omit<Habit, 'id' | 'streak' | 'lastCompleted'>) => void
+  removeHabit: (id: string) => void
+  reorderHabits: (ids: string[]) => void
+  completeHabit: (id: string) => void
+  // Shop actions
+  buyPack: (cost: number, cards: Footballer[]) => { refund: number; newCards: string[] }
+  // Coins
+  addCoins: (amount: number) => void
+  // Reset
+  resetAll: () => void
+}
+
+export const useAppStore = create<AppStore>()(
+  persist(
+    (set, get) => ({
+      coins: 200,
+      habits: [],
+      collection: {},
+      pullHistory: [],
+
+      addHabit: (habitData) => {
+        const habit: Habit = {
+          id: crypto.randomUUID(),
+          streak: 0,
+          lastCompleted: '',
+          ...habitData,
+        }
+        set(state => ({ habits: [...state.habits, habit] }))
+      },
+
+      removeHabit: (id) => {
+        set(state => ({ habits: state.habits.filter(h => h.id !== id) }))
+      },
+
+      reorderHabits: (ids) => {
+        set(state => ({
+          habits: ids.map(id => state.habits.find(h => h.id === id)!).filter(Boolean),
+        }))
+      },
+
+      completeHabit: (id) => {
+        set(state => {
+          const habit = state.habits.find(h => h.id === id)
+          if (!habit || isCompletedToday(habit.lastCompleted)) return state
+
+          const newStreak = calculateNewStreak(habit.streak, habit.lastCompleted)
+          const multiplier = streakMultiplier(newStreak)
+          const earned = Math.round(habit.coinValue * multiplier)
+
+          return {
+            coins: state.coins + earned,
+            habits: state.habits.map(h =>
+              h.id === id
+                ? { ...h, streak: newStreak, lastCompleted: getToday() }
+                : h
+            ),
+          }
+        })
+      },
+
+      buyPack: (cost, cards) => {
+        const state = get()
+        const newCollection = { ...state.collection }
+        let refund = 0
+        const newCards: string[] = []
+
+        for (const card of cards) {
+          const owned = newCollection[card.id] ?? 0
+          if (owned > 0) {
+            refund += duplicateRefund(card.rarity)
+          } else {
+            newCards.push(card.id)
+          }
+          newCollection[card.id] = owned + 1
+        }
+
+        const pullHistory = [
+          ...state.pullHistory,
+          ...cards.map(c => ({ footballerId: c.id, pulledAt: new Date().toISOString() })),
+        ]
+
+        set({
+          coins: state.coins - cost + refund,
+          collection: newCollection,
+          pullHistory,
+        })
+
+        return { refund, newCards }
+      },
+
+      addCoins: (amount) => {
+        set(state => ({ coins: state.coins + amount }))
+      },
+
+      resetAll: () => {
+        set({ coins: 200, habits: [], collection: {}, pullHistory: [] })
+      },
+    }),
+    {
+      name: 'habit-tracker-store',
+    }
+  )
+)
