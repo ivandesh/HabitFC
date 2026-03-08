@@ -40,7 +40,7 @@ function NavBar() {
 
 export default function App() {
   return (
-    <BrowserRouter basename="/habit-tracker">
+    <BrowserRouter basename="/HabitFC">
       <div className="min-h-screen bg-gray-950">
         <NavBar />
         <Routes>
