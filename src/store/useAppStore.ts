@@ -14,6 +14,8 @@ interface AppStore extends AppState {
   buyPack: (cost: number, cards: Footballer[]) => { refund: number; newCards: string[] }
   // Coins
   addCoins: (amount: number) => void
+  // Squad
+  setSquadSlot: (slotIndex: number, footballerId: string | null) => void
   // Reset
   resetAll: () => void
 }
@@ -25,6 +27,7 @@ export const useAppStore = create<AppStore>()(
       habits: [],
       collection: {},
       pullHistory: [],
+      squad: Array(11).fill(null),
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -100,8 +103,16 @@ export const useAppStore = create<AppStore>()(
         set(state => ({ coins: state.coins + amount }))
       },
 
+      setSquadSlot: (slotIndex, footballerId) => {
+        set(state => {
+          const squad = [...(state.squad ?? Array(11).fill(null))]
+          squad[slotIndex] = footballerId
+          return { squad }
+        })
+      },
+
       resetAll: () => {
-        set({ coins: 200, habits: [], collection: {}, pullHistory: [] })
+        set({ coins: 200, habits: [], collection: {}, pullHistory: [], squad: Array(11).fill(null) })
       },
     }),
     {

@@ -3,6 +3,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Shop } from './pages/Shop'
 import { PackOpening } from './pages/PackOpening'
 import { Collection } from './pages/Collection'
+import { Team } from './pages/Team'
 import { useAppStore } from './store/useAppStore'
 
 function NavBar() {
@@ -33,6 +34,7 @@ function NavBar() {
         <NavLink to="/" end className={linkClass}>Головна</NavLink>
         <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
         <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
+        <NavLink to="/team" className={linkClass}>Склад</NavLink>
         <div className="ml-auto shrink-0">
           <button
             onClick={handleReset}
@@ -57,6 +59,7 @@ export default function App() {
           <Route path="/shop" element={<Shop />} />
           <Route path="/open" element={<PackOpening />} />
           <Route path="/collection" element={<Collection />} />
+          <Route path="/team" element={<Team />} />
         </Routes>
       </div>
     </BrowserRouter>

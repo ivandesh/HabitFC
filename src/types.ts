@@ -9,12 +9,15 @@ export interface Habit {
   lastCompleted: string // ISO date string YYYY-MM-DD, empty string if never
 }
 
+export type Position = 'GK' | 'DEF' | 'MID' | 'FWD'
+
 export interface Footballer {
   id: string
   name: string
   club: string
   nationality: string
   rarity: Rarity
+  position: Position
   stats: { pace: number; shooting: number; passing: number; dribbling: number }
   emoji: string
   photoUrl?: string
@@ -33,4 +36,5 @@ export interface AppState {
   habits: Habit[]
   collection: Record<string, number>
   pullHistory: { footballerId: string; pulledAt: string }[]
+  squad: (string | null)[]  // 11 slots: [GK, DEF×4, MID×3, FWD×3]
 }

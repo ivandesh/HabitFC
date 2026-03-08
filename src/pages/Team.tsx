@@ -1,0 +1,353 @@
+import { useState, useMemo } from 'react'
+import { useAppStore } from '../store/useAppStore'
+import { footballers } from '../data/footballers'
+import { CoinDisplay } from '../components/ui/CoinDisplay'
+import type { Position } from '../types'
+
+type SlotDef = { pos: Position; x: number; y: number }
+
+const SLOTS: SlotDef[] = [
+  { pos: 'GK',  x: 50, y: 86 },
+  { pos: 'DEF', x: 17, y: 70 }, { pos: 'DEF', x: 37, y: 70 },
+  { pos: 'DEF', x: 63, y: 70 }, { pos: 'DEF', x: 83, y: 70 },
+  { pos: 'MID', x: 22, y: 51 }, { pos: 'MID', x: 50, y: 46 }, { pos: 'MID', x: 78, y: 51 },
+  { pos: 'FWD', x: 18, y: 27 }, { pos: 'FWD', x: 50, y: 18 }, { pos: 'FWD', x: 82, y: 27 },
+]
+
+const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
+
+const rarityRing: Record<string, string> = {
+  common:    'ring-gray-400/70',
+  rare:      'ring-blue-400/80',
+  epic:      'ring-purple-500/80',
+  legendary: 'ring-yellow-400/90',
+}
+
+const emptyBorder: Record<Position, string> = {
+  GK:  'border-yellow-400/50 text-yellow-400/70',
+  DEF: 'border-blue-400/50 text-blue-400/70',
+  MID: 'border-green-400/50 text-green-400/70',
+  FWD: 'border-red-400/50 text-red-400/70',
+}
+
+function playerOverall(f: typeof footballers[0]) {
+  return Math.round((f.stats.pace + f.stats.shooting + f.stats.passing + f.stats.dribbling) / 4)
+}
+
+function PitchSVG() {
+  return (
+    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Alternating stripes */}
+      {[0,1,2,3,4,5,6,7].map(i => (
+        <rect key={i} x="0" y={i * 50} width="300" height="50"
+          fill={i % 2 === 0 ? 'transparent' : 'black'} fillOpacity="0.06" />
+      ))}
+      {/* Outer border */}
+      <rect x="12" y="12" width="276" height="376" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
+      {/* Center line */}
+      <line x1="12" y1="200" x2="288" y2="200" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
+      {/* Center circle */}
+      <circle cx="150" cy="200" r="46" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
+      <circle cx="150" cy="200" r="2.5" fill="white" fillOpacity="0.3" />
+      {/* Top penalty box */}
+      <rect x="72" y="12" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
+      {/* Top 6-yard box */}
+      <rect x="108" y="12" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
+      {/* Top goal */}
+      <rect x="126" y="6" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
+      {/* Bottom penalty box */}
+      <rect x="72" y="324" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
+      {/* Bottom 6-yard box */}
+      <rect x="108" y="362" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
+      {/* Bottom goal */}
+      <rect x="126" y="382" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
+      {/* Penalty spots */}
+      <circle cx="150" cy="88" r="2.5" fill="white" fillOpacity="0.3" />
+      <circle cx="150" cy="312" r="2.5" fill="white" fillOpacity="0.3" />
+      {/* Penalty arcs */}
+      <path d="M 100 76 A 50 50 0 0 0 200 76" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
+      <path d="M 100 324 A 50 50 0 0 1 200 324" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
+    </svg>
+  )
+}
+
+function PlayerPhoto({ footballer }: { footballer: typeof footballers[0] }) {
+  return footballer.photoUrl ? (
+    <img
+      src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
+      alt={footballer.name}
+      className="w-full h-full object-contain"
+      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+    />
+  ) : (
+    <div className="w-full h-full flex items-center justify-center text-lg">{footballer.emoji}</div>
+  )
+}
+
+export function Team() {
+  const squad = useAppStore(state => state.squad ?? Array(11).fill(null))
+  const setSquadSlot = useAppStore(state => state.setSquadSlot)
+  const collection = useAppStore(state => state.collection)
+  const [activeSlot, setActiveSlot] = useState<number | null>(null)
+
+  const ownedIds = useMemo(
+    () => new Set(Object.keys(collection).filter(id => (collection[id] ?? 0) > 0)),
+    [collection]
+  )
+
+  const filledPlayers = useMemo(() =>
+    squad
+      .filter((id): id is string => id !== null)
+      .map(id => footballers.find(f => f.id === id)!)
+      .filter(Boolean),
+    [squad]
+  )
+
+  const teamOverall = useMemo(() => {
+    if (filledPlayers.length === 0) return 0
+    return Math.round(filledPlayers.reduce((s, f) => s + playerOverall(f), 0) / filledPlayers.length)
+  }, [filledPlayers])
+
+  const chemistry = useMemo(() => {
+    let links = 0
+    for (let i = 0; i < filledPlayers.length; i++)
+      for (let j = i + 1; j < filledPlayers.length; j++)
+        if (
+          filledPlayers[i].club === filledPlayers[j].club ||
+          filledPlayers[i].nationality === filledPlayers[j].nationality
+        ) links++
+    return links
+  }, [filledPlayers])
+
+  const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
+
+  const pickerPlayers = useMemo(() => {
+    if (!activeSlotDef) return []
+    return footballers
+      .filter(f => f.position === activeSlotDef.pos && ownedIds.has(f.id))
+      .sort((a, b) => playerOverall(b) - playerOverall(a))
+  }, [activeSlotDef, ownedIds])
+
+  function handleSlotClick(idx: number) {
+    setActiveSlot(prev => prev === idx ? null : idx)
+  }
+
+  function handleSelectPlayer(footballerId: string) {
+    if (activeSlot === null) return
+    setSquadSlot(activeSlot, footballerId)
+    setActiveSlot(null)
+  }
+
+  function handleRemovePlayer(idx: number, e: React.MouseEvent) {
+    e.stopPropagation()
+    setSquadSlot(idx, null)
+    if (activeSlot === idx) setActiveSlot(null)
+  }
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 mb-6">
+        <div>
+          <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
+            · 4–3–3 ·
+          </div>
+          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+            Склад
+          </h1>
+          <p className="text-[#5A7090] mt-2 text-sm">{filledPlayers.length} / 11 гравців</p>
+        </div>
+        <CoinDisplay />
+      </div>
+
+      {/* Stats bar */}
+      <div className="flex gap-3 mb-6">
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="font-oswald text-3xl font-bold text-[#00E676]">
+            {teamOverall || '—'}
+          </div>
+          <div>
+            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Загальний</div>
+            <div className="text-xs text-white font-semibold">рейтинг</div>
+          </div>
+        </div>
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="font-oswald text-3xl font-bold text-[#FBBF24]">
+            {chemistry || '—'}
+          </div>
+          <div>
+            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Хімія</div>
+            <div className="text-xs text-white font-semibold">зв'язки</div>
+          </div>
+        </div>
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
+          <div className="font-oswald text-3xl font-bold text-[#A78BFA]">
+            {filledPlayers.length}
+          </div>
+          <div>
+            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Складено</div>
+            <div className="text-xs text-white font-semibold">гравців</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
+        {/* Pitch */}
+        <div className="w-full lg:w-1/2 max-w-[480px] mx-auto lg:mx-0 shrink-0">
+          <div
+            className="relative w-full rounded-2xl overflow-hidden shadow-2xl"
+            style={{
+              aspectRatio: '3/4',
+              background: 'linear-gradient(180deg, #1b6133 0%, #1e6b38 45%, #1a5c30 55%, #196030 100%)',
+            }}
+          >
+            <PitchSVG />
+            {SLOTS.map((slot, idx) => {
+              const footballerId = squad[idx] ?? null
+              const footballer = footballerId ? footballers.find(f => f.id === footballerId) ?? null : null
+              const isActive = activeSlot === idx
+
+              return (
+                <div
+                  key={idx}
+                  className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-0.5 cursor-pointer z-10"
+                  style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
+                  onClick={() => handleSlotClick(idx)}
+                >
+                  {footballer ? (
+                    <div className="flex flex-col items-center gap-0.5 group">
+                      <div
+                        className={`relative w-16 h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
+                      >
+                        <PlayerPhoto footballer={footballer} />
+                        <button
+                          onClick={(e) => handleRemovePlayer(idx, e)}
+                          className="absolute inset-0 bg-red-900/85 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-base cursor-pointer"
+                        >×</button>
+                      </div>
+                      <div className="text-[11px] text-white/85 font-bold leading-none max-w-[4.5rem] text-center truncate drop-shadow">
+                        {footballer.name.split(' ').slice(-1)[0]}
+                      </div>
+                      <div className="text-[11px] font-oswald font-bold text-[#00E676] leading-none drop-shadow">
+                        {playerOverall(footballer)}
+                      </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`w-16 h-16 rounded-full border-2 border-dashed flex items-center justify-center transition-all ${emptyBorder[slot.pos]} ${isActive ? 'bg-white/20 scale-110' : 'bg-black/25 hover:bg-white/10 hover:scale-105'}`}
+                    >
+                      <span className="text-xs font-oswald font-bold">{POS_UA[slot.pos]}</span>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Formation legend */}
+          <div className="flex justify-center gap-4 mt-3 text-[10px]">
+            {(['GK','DEF','MID','FWD'] as Position[]).map(pos => {
+              const colors = {
+                GK:  'bg-yellow-400/20 text-yellow-300',
+                DEF: 'bg-blue-400/20 text-blue-300',
+                MID: 'bg-green-400/20 text-green-300',
+                FWD: 'bg-red-400/20 text-red-300',
+              }
+              return (
+                <div key={pos} className={`px-2 py-0.5 rounded font-oswald font-bold ${colors[pos]}`}>
+                  {POS_UA[pos]}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* Player picker panel */}
+        <div className="w-full lg:w-1/2">
+          {activeSlot === null ? (
+            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-6 text-center">
+              <div className="text-3xl mb-3">⚽</div>
+              <div className="font-oswald text-lg font-bold text-white mb-1">Вибери позицію</div>
+              <div className="text-sm text-[#5A7090]">Натисни на будь-який слот на полі щоб вибрати гравця</div>
+
+              {filledPlayers.length > 0 && (
+                <div className="mt-6 space-y-2 text-left">
+                  <div className="text-xs text-[#5A7090] uppercase tracking-wider mb-3 font-oswald">Склад</div>
+                  {SLOTS.map((slot, idx) => {
+                    const id = squad[idx] ?? null
+                    const f = id ? footballers.find(p => p.id === id) ?? null : null
+                    if (!f) return null
+                    return (
+                      <div key={idx} className="flex items-center gap-3 bg-[#0D1520] rounded-xl px-3 py-2">
+                        <div className={`w-8 h-8 rounded-full ring-1 overflow-hidden bg-black/40 shrink-0 ${rarityRing[f.rarity]}`}>
+                          <PlayerPhoto footballer={f} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{f.name}</div>
+                          <div className="text-[10px] text-[#5A7090]">{f.club}</div>
+                        </div>
+                        <div className="font-oswald font-bold text-sm text-[#00E676]">{playerOverall(f)}</div>
+                        <div className="text-[10px] font-bold text-[#5A7090] font-oswald">{POS_UA[slot.pos]}</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-xs text-[#5A7090] uppercase tracking-wider">Вибери гравця</div>
+                  <div className="font-oswald text-lg font-bold text-white">
+                    {POS_UA[SLOTS[activeSlot].pos]}
+                    <span className="text-[#5A7090] font-normal text-base ml-2">— позиція {activeSlot + 1}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setActiveSlot(null)}
+                  className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
+                >×</button>
+              </div>
+
+              {pickerPlayers.length === 0 ? (
+                <div className="text-center py-10 text-[#5A7090]">
+                  <div className="text-4xl mb-3">🔒</div>
+                  <div className="font-oswald text-sm text-white">Немає карток на цю позицію</div>
+                  <div className="text-xs mt-1">Купи пакети, щоб отримати гравців</div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[420px] overflow-y-auto pr-1">
+                  {pickerPlayers.map(f => {
+                    const inSquad = squad.includes(f.id)
+                    const overall = playerOverall(f)
+                    return (
+                      <button
+                        key={f.id}
+                        disabled={inSquad}
+                        onClick={() => handleSelectPlayer(f.id)}
+                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
+                          inSquad
+                            ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
+                            : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
+                        }`}
+                      >
+                        <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
+                          <PlayerPhoto footballer={f} />
+                        </div>
+                        <div className="text-[10px] font-bold text-center leading-tight text-white/90 w-full truncate">
+                          {f.name.split(' ').slice(-1)[0]}
+                        </div>
+                        <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
