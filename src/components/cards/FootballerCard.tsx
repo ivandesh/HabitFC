@@ -45,7 +45,7 @@ export function FootballerCard({ footballer, owned, mini = false }: Props) {
       <div className={`text-xs font-bold tracking-widest ${cfg.labelColor}`}>{cfg.label}</div>
       {footballer.photoUrl ? (
         <img
-          src={footballer.photoUrl}
+          src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
           alt={footballer.name}
           className="w-24 h-24 object-contain rounded-full bg-black/30"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
