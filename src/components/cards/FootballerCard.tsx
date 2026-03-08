@@ -21,7 +21,7 @@ export function FootballerCard({ footballer, owned, mini = false }: Props) {
       <div className={`relative border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} rounded-xl p-3 flex flex-col items-center gap-1 cursor-default transition-transform hover:scale-105`}>
         {footballer.photoUrl ? (
           <img
-            src={footballer.photoUrl}
+            src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
             alt={footballer.name}
             className="w-12 h-12 object-contain rounded-full bg-black/30"
             onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}

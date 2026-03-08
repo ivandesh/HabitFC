@@ -70,7 +70,7 @@ export function FootballerModal({ footballer, owned, onClose }: Props) {
 
           {footballer.photoUrl ? (
             <img
-              src={footballer.photoUrl}
+              src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
               alt={footballer.name}
               className="w-36 h-36 object-contain rounded-full bg-black/30"
               onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
