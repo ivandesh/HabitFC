@@ -41,4 +41,5 @@ export interface AppState {
   totalCompletions: number
   formation: string
   pendingUnlocks: string[]  // not persisted — UI drain queue
+  pityCounters: Record<string, number>  // keyed by pack id
 }

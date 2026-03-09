@@ -13,7 +13,7 @@ interface AppStore extends AppState {
   reorderHabits: (ids: string[]) => void
   completeHabit: (id: string) => void
   // Shop actions
-  buyPack: (cost: number, cards: Footballer[]) => { refund: number; newCards: string[]; newUnlockIds: string[] }
+  buyPack: (cost: number, cards: Footballer[], packId: string, nextPityCounter: number) => { refund: number; newCards: string[]; newUnlockIds: string[] }
   pushPendingUnlock: (id: string) => void
   // Coins
   addCoins: (amount: number) => void
@@ -39,6 +39,7 @@ export const useAppStore = create<AppStore>()(
       totalCompletions: 0,
       formation: '4-3-3',
       pendingUnlocks: [],
+      pityCounters: {},
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -89,7 +90,7 @@ export const useAppStore = create<AppStore>()(
         }
       },
 
-      buyPack: (cost, cards) => {
+      buyPack: (cost, cards, packId, nextPityCounter) => {
         const state = get()
         const newCollection = { ...state.collection }
         let refund = 0
@@ -114,6 +115,7 @@ export const useAppStore = create<AppStore>()(
           coins: state.coins - cost + refund,
           collection: newCollection,
           pullHistory,
+          pityCounters: { ...state.pityCounters, [packId]: nextPityCounter },
         })
 
         // Record achievements in state but don't queue toasts yet —
@@ -159,6 +161,7 @@ export const useAppStore = create<AppStore>()(
           totalCompletions: 0,
           formation: '4-3-3',
           pendingUnlocks: [],
+          pityCounters: {},
         })
       },
 

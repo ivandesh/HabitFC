@@ -7,13 +7,15 @@ import { CoinDisplay } from '../components/ui/CoinDisplay'
 
 export function Shop() {
   const coins = useAppStore(state => state.coins)
+  const pityCounters = useAppStore(state => state.pityCounters)
   const navigate = useNavigate()
 
   function handleBuy(packId: string) {
     const pack = packs.find(p => p.id === packId)
     if (!pack || coins < pack.cost) return
-    const { cards } = openPack(pack, 0) // TODO Task 3: wire real pityCounter + forward nextPityCounter
-    navigate('/open', { state: { pack, cards } })
+    const pityCounter = pityCounters[pack.id] ?? 0
+    const { cards, nextPityCounter } = openPack(pack, pityCounter)
+    navigate('/open', { state: { pack, cards, nextPityCounter } })
   }
 
   return (

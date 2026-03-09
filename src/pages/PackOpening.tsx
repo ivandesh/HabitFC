@@ -11,6 +11,7 @@ import { duplicateRefund } from '../lib/gacha'
 interface LocationState {
   pack: Pack
   cards: Footballer[]
+  nextPityCounter: number
 }
 
 type Phase = 'confirm' | 'opening' | 'revealing' | 'done'
@@ -363,7 +364,7 @@ export function PackOpening() {
     )
   }
 
-  const { pack, cards } = state
+  const { pack, cards, nextPityCounter } = state
   const theme = getTheme(pack.id)
 
   function startOpening() {
@@ -379,7 +380,7 @@ export function PackOpening() {
     }
     setCardRefunds(perCardRefunds)
 
-    const result = buyPack(pack.cost, cards)
+    const result = buyPack(pack.cost, cards, pack.id, nextPityCounter)
     setTotalRefund(result.refund)
     pendingAchievements.current = [...result.newUnlockIds]
 
