@@ -277,3 +277,57 @@ export function playCardFlip(rarity: 'common' | 'rare' | 'epic' | 'legendary' = 
     }
   } catch (_) { /* audio blocked */ }
 }
+
+// ─── Achievement unlock: triumphant fanfare ───────────────────────────────────
+// Rising arpeggio C5→E5→G5, then a warm chord bloom + sparkle.
+export function playAchievementUnlock() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+
+    // Rising arpeggio
+    const arpeggioFreqs = [523.25, 659.26, 783.99] // C5, E5, G5
+    arpeggioFreqs.forEach((freq, i) => {
+      const osc = ac.createOscillator()
+      const og = vol(ac)
+      osc.connect(og); og.connect(ac.destination)
+      osc.type = 'sine'
+      osc.frequency.value = freq
+      const s = t + i * 0.1
+      og.gain.setValueAtTime(0, s)
+      og.gain.linearRampToValueAtTime(0.2, s + 0.01)
+      og.gain.exponentialRampToValueAtTime(0.001, s + 0.35)
+      osc.start(s); osc.stop(s + 0.4)
+    })
+
+    // Warm chord bloom at the end of the arpeggio
+    const chordFreqs = [523.25, 659.26, 783.99, 1046.5] // C5 E5 G5 C6
+    chordFreqs.forEach((freq, i) => {
+      const osc = ac.createOscillator()
+      const og = vol(ac)
+      osc.connect(og); og.connect(ac.destination)
+      osc.type = i < 2 ? 'triangle' : 'sine'
+      osc.frequency.value = freq
+      const s = t + 0.28
+      og.gain.setValueAtTime(0, s)
+      og.gain.linearRampToValueAtTime(0.12 - i * 0.02, s + 0.02)
+      og.gain.exponentialRampToValueAtTime(0.001, s + 0.8)
+      osc.start(s); osc.stop(s + 0.85)
+    })
+
+    // Short sparkle
+    const sparkFreqs = [2093, 2637, 3136]
+    sparkFreqs.forEach((f, i) => {
+      const osc = ac.createOscillator()
+      const og = vol(ac)
+      osc.connect(og); og.connect(ac.destination)
+      osc.type = 'sine'
+      osc.frequency.value = f
+      const s = t + 0.3 + i * 0.04
+      og.gain.setValueAtTime(0, s)
+      og.gain.linearRampToValueAtTime(0.07, s + 0.008)
+      og.gain.exponentialRampToValueAtTime(0.001, s + 0.3)
+      osc.start(s); osc.stop(s + 0.35)
+    })
+  } catch (_) { /* audio blocked */ }
+}
