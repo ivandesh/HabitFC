@@ -236,22 +236,40 @@ set({
 })
 ```
 
-**Step 4: Wire pityCounters in PackOpening.tsx**
+**Step 4: Wire pityCounters in Shop.tsx**
 
-In `src/pages/PackOpening.tsx`, update the pack opening flow:
+NOTE: `openPack` is called in `src/pages/Shop.tsx`, NOT in PackOpening.tsx. PackOpening.tsx receives pre-rolled cards via router state. The wiring must happen in Shop.tsx, with nextPityCounter forwarded through router state to PackOpening.tsx.
 
-1. Read the current pity counter for this pack from the store:
+In `src/pages/Shop.tsx`:
+
+1. Read pityCounters from the store (add selector near other store reads):
 ```ts
 const pityCounters = useAppStore(state => state.pityCounters)
 ```
 
-2. Pass it to `openPack` and capture the result:
+2. Replace the current `openPack` call (which has a TODO comment) with:
 ```ts
 const pityCounter = pityCounters[pack.id] ?? 0
 const { cards, nextPityCounter } = openPack(pack, pityCounter)
 ```
 
-3. Pass `pack.id` and `nextPityCounter` to `buyPack`:
+3. Forward `nextPityCounter` and `pack.id` through the router state to PackOpening. Find the `navigate` call and add them:
+```ts
+navigate('/open', { state: { pack, cards, nextPityCounter } })
+```
+
+In `src/pages/PackOpening.tsx`:
+
+4. Read `nextPityCounter` from router location state (next to where `pack` and `cards` are read):
+```ts
+const { pack, cards: initialCards, nextPityCounter } = location.state as {
+  pack: Pack
+  cards: Footballer[]
+  nextPityCounter: number
+}
+```
+
+5. Pass `pack.id` and `nextPityCounter` to `buyPack` (find the existing `buyPack(...)` call and update it):
 ```ts
 buyPack(pack.cost, cards, pack.id, nextPityCounter)
 ```
@@ -272,7 +290,7 @@ Check all of the following:
 **Step 6: Commit**
 
 ```bash
-git add src/types.ts src/store/useAppStore.ts src/pages/PackOpening.tsx
+git add src/types.ts src/store/useAppStore.ts src/pages/Shop.tsx src/pages/PackOpening.tsx
 git commit -m "feat: wire pity counters per pack type into store"
 ```
 
