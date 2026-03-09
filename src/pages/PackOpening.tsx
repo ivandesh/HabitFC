@@ -350,7 +350,7 @@ export function PackOpening() {
   const [cardRefunds, setCardRefunds] = useState<Record<number, number>>({})
   const pendingAchievements = useRef<string[]>([])
 
-  if (!state?.pack || !state?.cards) {
+  if (!state?.pack || !state?.cards || state.nextPityCounter === undefined) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-gray-400">Пакет не обрано.</p>
