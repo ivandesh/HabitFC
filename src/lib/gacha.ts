@@ -17,6 +17,7 @@ function pickRarity(weights: Record<Rarity, number>, pityCounter: number): Rarit
     ['epic', weights.epic],
     ['legendary', legendaryWeight],
   ]
+  // Total intentionally inflates when pity boosts legendary — other rarities reduce proportionally
   const total = entries.reduce((sum, [, w]) => sum + w, 0)
   let roll = Math.random() * total
   for (const [rarity, weight] of entries) {

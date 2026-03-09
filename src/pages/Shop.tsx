@@ -12,7 +12,7 @@ export function Shop() {
   function handleBuy(packId: string) {
     const pack = packs.find(p => p.id === packId)
     if (!pack || coins < pack.cost) return
-    const { cards } = openPack(pack, 0)
+    const { cards } = openPack(pack, 0) // TODO Task 3: wire real pityCounter + forward nextPityCounter
     navigate('/open', { state: { pack, cards } })
   }
 
