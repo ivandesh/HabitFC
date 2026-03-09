@@ -10,13 +10,13 @@ export function Dashboard() {
   const pct = total > 0 ? Math.round((owned / total) * 100) : 0
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
+    <div className="max-w-4xl mx-auto px-4 py-5 sm:py-8 space-y-5 sm:space-y-8">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
             · Панель керування ·
           </div>
-          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+          <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Трекер Звичок
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">

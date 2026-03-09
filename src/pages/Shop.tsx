@@ -19,13 +19,13 @@ export function Shop() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between gap-3 mb-10">
+    <div className="max-w-4xl mx-auto px-4 py-5 sm:py-8">
+      <div className="flex items-start justify-between gap-3 mb-6 sm:mb-10">
         <div className="min-w-0">
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
             · Придбай пакет ·
           </div>
-          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+          <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Магазин карток
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">Витрачай монети на пакети карток</p>

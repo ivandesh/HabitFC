@@ -58,12 +58,11 @@ function PackVisual({ pack }: { pack: Pack }) {
   const theme = getTheme(pack.id)
   return (
     <div
-      className="relative w-52 rounded-2xl border-2 overflow-hidden flex flex-col select-none"
+      className="relative w-44 sm:w-52 min-h-[17rem] sm:min-h-[20rem] rounded-2xl border-2 overflow-hidden flex flex-col select-none"
       style={{
         background: theme.gradient,
         borderColor: theme.border,
         boxShadow: `0 0 60px ${theme.glowColor}, 0 20px 40px rgba(0,0,0,0.5)`,
-        minHeight: '20rem',
       }}
     >
       {/* Shimmer streak */}
@@ -103,7 +102,7 @@ function PackVisual({ pack }: { pack: Pack }) {
           {theme.emoji}
         </div>
         <div className="relative z-10 text-center">
-          <div className="font-oswald text-2xl text-white uppercase tracking-wide leading-tight">
+          <div className="font-oswald text-lg sm:text-2xl text-white uppercase tracking-wide leading-tight">
             {pack.name}
           </div>
           <div className="font-oswald text-sm mt-1" style={{ color: theme.accent }}>
@@ -168,7 +167,7 @@ function CardBack({ packId }: { packId: string }) {
           }}
         />
         <div
-          className="relative z-10 text-6xl"
+          className="relative z-10 text-5xl sm:text-6xl"
           style={{ filter: `drop-shadow(0 0 20px ${theme.accent})` }}
         >
           ⚽
@@ -191,6 +190,11 @@ function CardBack({ packId }: { packId: string }) {
   )
 }
 
+// Responsive card dimensions — scale down on mobile via CSS clamp
+// On 375 px screen: ~158 × 243 px; on 768 px+ clamped to 12 × 18.5 rem
+const CARD_W = 'clamp(8rem, 42vw, 12rem)'
+const CARD_H = 'clamp(12rem, 65vw, 18.5rem)'
+
 // ─── Flip card (no slide — slide handled by parent slot) ─────────────────────
 function FlipCard({
   footballer,
@@ -208,14 +212,14 @@ function FlipCard({
   return (
     <motion.div
       className="relative"
-      style={{ perspective: 1050, width: '12rem', height: '18.5rem', cursor: flipped ? 'default' : 'pointer' }}
+      style={{ perspective: 1050, width: CARD_W, height: CARD_H, cursor: flipped ? 'default' : 'pointer' }}
       whileHover={!flipped ? { scale: 1.04 } : {}}
       transition={{ duration: 0.15 }}
       onClick={!flipped ? onClick : undefined}
     >
       {/* 3D flip wrapper */}
       <motion.div
-        style={{ transformStyle: 'preserve-3d', width: '12rem', height: '18.5rem' }}
+        style={{ transformStyle: 'preserve-3d', width: CARD_W, height: CARD_H }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.65, ease: [0.645, 0.045, 0.355, 1.0] }}
       >
@@ -287,7 +291,7 @@ function Deck({ pack, remaining, nextIndex, onDeal }: {
     <div className="flex flex-col items-center gap-4">
       <motion.div
         className="relative cursor-pointer"
-        style={{ width: '12rem', height: '18.5rem' }}
+        style={{ width: CARD_W, height: CARD_H }}
         whileHover={{ y: -8 }}
         transition={{ duration: 0.18 }}
         onClick={onDeal}
@@ -309,7 +313,7 @@ function Deck({ pack, remaining, nextIndex, onDeal }: {
         <motion.div
           key={nextIndex}
           layoutId={`card-${nextIndex}`}
-          style={{ position: 'relative', zIndex: shadowCount + 1, width: '12rem', height: '18.5rem' }}
+          style={{ position: 'relative', zIndex: shadowCount + 1, width: CARD_W, height: CARD_H }}
         >
           <CardBack packId={pack.id} />
         </motion.div>
@@ -426,7 +430,7 @@ export function PackOpening() {
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-4 py-10 gap-8 relative" style={{ overflow: 'clip' }}>
+    <div className="flex flex-col items-center min-h-screen px-4 py-6 sm:py-10 gap-6 sm:gap-8 relative" style={{ overflow: 'clip' }}>
 
       {/* ── White flash — fixed, no layout impact ──────────────── */}
       <AnimatePresence>
@@ -513,7 +517,7 @@ export function PackOpening() {
         {(phase === 'revealing' || phase === 'done') && (
           <motion.div
             key="cards-area"
-            className="flex flex-col items-center gap-8 w-full"
+            className="flex flex-col items-center gap-5 sm:gap-8 w-full"
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35, ease: 'easeOut' }}
@@ -527,7 +531,7 @@ export function PackOpening() {
                   ? `· Відкрито ${flipped.size} / ${cards.length} ·`
                   : '· Всі картки відкрито ·'}
               </div>
-              <h1 className="font-oswald text-3xl sm:text-4xl font-bold uppercase tracking-wide text-white leading-none">
+              <h1 className="font-oswald text-xl sm:text-4xl font-bold uppercase tracking-wide text-white leading-none">
                 {pack.name}
               </h1>
             </div>
@@ -552,14 +556,17 @@ export function PackOpening() {
                 )}
               </AnimatePresence>
 
-              {/* Row of dealt cards — grows as user deals */}
+              {/* Row of dealt cards — scrollable on mobile */}
               {revealed > 0 && (
-                <div className="flex flex-nowrap gap-3 justify-center py-4">
+                <div
+                  className="flex flex-nowrap gap-2 sm:gap-3 py-4 w-full px-4 sm:justify-center overflow-x-auto hide-scrollbar"
+                  style={{ scrollSnapType: 'x mandatory', WebkitOverflowScrolling: 'touch' }}
+                >
                   {cards.slice(0, revealed).map((card, i) => (
                     <motion.div
                       key={i}
                       layoutId={`card-${i}`}
-                      style={{ width: '12rem', height: '18.5rem', flexShrink: 0 }}
+                      style={{ width: CARD_W, height: CARD_H, flexShrink: 0, scrollSnapAlign: 'center' }}
                     >
                       <FlipCard
                         footballer={card}
@@ -587,12 +594,12 @@ export function PackOpening() {
                     <motion.p
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="text-yellow-400 font-semibold text-lg flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-5 py-2 rounded-xl"
+                      className="text-yellow-400 font-semibold text-sm sm:text-lg flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-4 py-2 rounded-xl"
                     >
                       Повернення за дублікати: +{totalRefund} <CoinIcon size={18} />
                     </motion.p>
                   )}
-                  <div className="flex gap-4">
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 w-full sm:w-auto">
                     <button
                       onClick={() => navigate('/shop')}
                       className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"

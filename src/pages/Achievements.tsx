@@ -30,14 +30,14 @@ export function Achievements() {
   const total = ACHIEVEMENTS.length
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="max-w-4xl mx-auto px-4 py-5 sm:py-8">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
+      <div className="flex items-start justify-between gap-3 mb-5 sm:mb-6">
         <div>
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
             · Досягнення ·
           </div>
-          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+          <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Трофеї
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">
@@ -59,12 +59,12 @@ export function Achievements() {
       </div>
 
       {/* Category tabs */}
-      <div className="flex gap-1 mb-6 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1">
+      <div className="flex gap-1 mb-5 sm:mb-6 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1 overflow-x-auto hide-scrollbar">
         {TABS.map(t => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 py-2 px-3 rounded-lg font-oswald font-bold text-xs uppercase tracking-wider transition-all cursor-pointer ${
+            className={`flex-1 min-w-fit py-2 px-3 rounded-lg font-oswald font-bold text-xs uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap ${
               tab === t.key
                 ? 'bg-[#00E676] text-[#04060A]'
                 : 'text-[#5A7090] hover:text-white'

@@ -41,7 +41,7 @@ export function AchievementToastManager() {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -60 }}
           transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed top-4 right-4 z-50 flex items-center gap-3 bg-[#0D1520] border border-[#00E676]/40 rounded-2xl px-4 py-3 shadow-2xl max-w-xs"
+          className="fixed top-14 sm:top-4 right-3 sm:right-4 left-3 sm:left-auto z-50 flex items-center gap-3 bg-[#0D1520] border border-[#00E676]/40 rounded-2xl px-4 py-3 shadow-2xl sm:max-w-xs"
         >
           <div className="text-2xl shrink-0">{current.icon}</div>
           <div>

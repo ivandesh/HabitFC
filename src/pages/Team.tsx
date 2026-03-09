@@ -164,19 +164,24 @@ export function Team() {
     setPanelMode('idle')
   }
 
+  function closePanel() {
+    setActiveSlot(null)
+    setPanelMode('idle')
+  }
+
   const activePlayer = activeSlot !== null && panelMode === 'stats'
     ? footballers.find(f => f.id === squad[activeSlot]) ?? null
     : null
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8">
+    <div className="max-w-5xl mx-auto px-4 py-5 sm:py-8">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
             · {FORMATIONS[formation]?.label ?? formation} ·
           </div>
-          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+          <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Склад
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">{filledPlayers.length} / 11 гравців</p>
@@ -185,7 +190,7 @@ export function Team() {
       </div>
 
       {/* Formation switcher */}
-      <div className="flex gap-1 mb-4 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1 overflow-x-auto">
+      <div className="flex gap-1 mb-4 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1 overflow-x-auto hide-scrollbar">
         {FORMATION_KEYS.map(key => (
           <button
             key={key}
@@ -201,33 +206,36 @@ export function Team() {
         ))}
       </div>
 
-      {/* Stats bar */}
-      <div className="flex gap-3 mb-4">
-        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="font-oswald text-3xl font-bold text-[#00E676]">
+      {/* Stats bar — column layout on mobile, row on sm+ */}
+      <div className="flex gap-2 sm:gap-3 mb-4">
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-2 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-center sm:items-center gap-0.5 sm:gap-3">
+          <div className="font-oswald text-xl sm:text-3xl font-bold text-[#00E676]">
             {teamOverall || '—'}
           </div>
-          <div>
-            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Загальний</div>
-            <div className="text-xs text-white font-semibold">рейтинг</div>
+          <div className="text-center sm:text-left">
+            <div className="hidden sm:block text-[10px] text-[#5A7090] uppercase tracking-wider">Загальний</div>
+            <div className="hidden sm:block text-xs text-white font-semibold">рейтинг</div>
+            <div className="sm:hidden font-oswald text-[8px] text-[#5A7090] uppercase tracking-widest">OVR</div>
           </div>
         </div>
-        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="font-oswald text-3xl font-bold text-[#FBBF24]">
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-2 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-center sm:items-center gap-0.5 sm:gap-3">
+          <div className="font-oswald text-xl sm:text-3xl font-bold text-[#FBBF24]">
             {bonusPct > 0 ? `+${bonusPct}%` : '—'}
           </div>
-          <div>
-            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Хімія</div>
-            <div className="text-xs text-white font-semibold">бонус монет</div>
+          <div className="text-center sm:text-left">
+            <div className="hidden sm:block text-[10px] text-[#5A7090] uppercase tracking-wider">Хімія</div>
+            <div className="hidden sm:block text-xs text-white font-semibold">бонус монет</div>
+            <div className="sm:hidden font-oswald text-[8px] text-[#5A7090] uppercase tracking-widest">ХІМ</div>
           </div>
         </div>
-        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
-          <div className="font-oswald text-3xl font-bold text-[#A78BFA]">
+        <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-2 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-center sm:items-center gap-0.5 sm:gap-3">
+          <div className="font-oswald text-xl sm:text-3xl font-bold text-[#A78BFA]">
             {filledPlayers.length}
           </div>
-          <div>
-            <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Складено</div>
-            <div className="text-xs text-white font-semibold">гравців</div>
+          <div className="text-center sm:text-left">
+            <div className="hidden sm:block text-[10px] text-[#5A7090] uppercase tracking-wider">Складено</div>
+            <div className="hidden sm:block text-xs text-white font-semibold">гравців</div>
+            <div className="sm:hidden font-oswald text-[8px] text-[#5A7090] uppercase tracking-widest">ГРВ</div>
           </div>
         </div>
       </div>
@@ -272,23 +280,24 @@ export function Team() {
                 >
                   {footballer ? (
                     <div className="flex flex-col items-center gap-0.5">
+                      {/* Slot size: 40px on mobile, 64px on sm+ */}
                       <div
-                        className={`relative w-16 h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
+                        className={`relative w-10 h-10 sm:w-16 sm:h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
                       >
                         <PlayerPhoto footballer={footballer} />
                       </div>
-                      <div className="text-[11px] text-white/85 font-bold leading-none max-w-[4.5rem] text-center truncate drop-shadow">
+                      <div className="text-[9px] sm:text-[11px] text-white/85 font-bold leading-none max-w-[3rem] sm:max-w-[4.5rem] text-center truncate drop-shadow">
                         {footballer.name.split(' ').slice(-1)[0]}
                       </div>
-                      <div className="text-[11px] font-oswald font-bold text-[#00E676] leading-none drop-shadow">
+                      <div className="text-[9px] sm:text-[11px] font-oswald font-bold text-[#00E676] leading-none drop-shadow">
                         {playerOverall(footballer)}
                       </div>
                     </div>
                   ) : (
                     <div
-                      className={`w-16 h-16 rounded-full border-2 border-dashed flex items-center justify-center transition-all ${emptyBorder[slot.pos]} ${isActive ? 'bg-white/20 scale-110' : 'bg-black/25 hover:bg-white/10 hover:scale-105'}`}
+                      className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full border-2 border-dashed flex items-center justify-center transition-all ${emptyBorder[slot.pos]} ${isActive ? 'bg-white/20 scale-110' : 'bg-black/25 hover:bg-white/10 hover:scale-105'}`}
                     >
-                      <span className="text-xs font-oswald font-bold">{POS_UA[slot.pos]}</span>
+                      <span className="text-[8px] sm:text-xs font-oswald font-bold">{POS_UA[slot.pos]}</span>
                     </div>
                   )}
                 </div>
@@ -314,98 +323,123 @@ export function Team() {
           </div>
         </div>
 
-        {/* Right panel */}
+        {/* Right panel — desktop: right column; mobile: fixed bottom sheet when active */}
         <div className="w-full lg:w-1/2">
-          {/* Stats overlay */}
-          {panelMode === 'stats' && activePlayer && (
-            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-5">
-              <div className="flex items-center justify-between mb-4">
-                <div className="text-xs text-[#5A7090] uppercase tracking-wider">Гравець</div>
-                <button
-                  onClick={() => { setActiveSlot(null); setPanelMode('idle') }}
-                  className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
-                >×</button>
-              </div>
-              <div className="flex items-center gap-4 mb-5">
-                <div className={`w-16 h-16 rounded-full ring-2 overflow-hidden bg-black/40 shrink-0 ${rarityRing[activePlayer.rarity]}`}>
-                  <PlayerPhoto footballer={activePlayer} />
-                </div>
-                <div>
-                  <div className="font-oswald font-bold text-white text-lg leading-tight">{activePlayer.name}</div>
-                  <div className="text-xs text-[#5A7090]">{activePlayer.club} · {activePlayer.nationality}</div>
-                  <div className="font-oswald font-bold text-[#00E676] text-xl mt-1">{playerOverall(activePlayer)}</div>
-                </div>
-              </div>
-              <div className="space-y-2">
-                <StatBar label="Швидкість" value={activePlayer.stats.pace} />
-                <StatBar label="Удар" value={activePlayer.stats.shooting} />
-                <StatBar label="Пас" value={activePlayer.stats.passing} />
-                <StatBar label="Дриблінг" value={activePlayer.stats.dribbling} />
-              </div>
-              <button
-                onClick={handleRemoveFromStats}
-                className="mt-4 w-full py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 transition-colors cursor-pointer"
-              >
-                Видалити зі складу
-              </button>
-            </div>
-          )}
 
-          {/* Player picker */}
-          {panelMode === 'pick' && activeSlot !== null && (
-            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-4">
-              <div className="flex items-center justify-between mb-4">
-                <div>
-                  <div className="text-xs text-[#5A7090] uppercase tracking-wider">Вибери гравця</div>
-                  <div className="font-oswald text-lg font-bold text-white">
-                    {POS_UA[SLOTS[activeSlot].pos]}
-                    <span className="text-[#5A7090] font-normal text-base ml-2">— позиція {activeSlot + 1}</span>
-                  </div>
-                </div>
-                <button
-                  onClick={() => { setActiveSlot(null); setPanelMode('idle') }}
-                  className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
-                >×</button>
+          {/* ── Active panels (stats / pick) ── */}
+          {panelMode !== 'idle' && (
+            <div
+              className="
+                fixed left-0 right-0 z-50
+                sm:static sm:bottom-auto sm:left-auto sm:right-auto sm:z-auto
+                bg-[#0A0F1A] border border-b-0 sm:border-b border-[#1A2336]
+                rounded-t-2xl sm:rounded-2xl
+                overflow-hidden
+              "
+              style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+            >
+              {/* Drag handle — mobile only */}
+              <div className="sm:hidden flex justify-center pt-2.5 pb-1">
+                <div className="w-8 h-1 bg-[#2A3A50] rounded-full" />
               </div>
 
-              {pickerPlayers.length === 0 ? (
-                <div className="text-center py-10 text-[#5A7090]">
-                  <div className="text-4xl mb-3">🔒</div>
-                  <div className="font-oswald text-sm text-white">Немає карток на цю позицію</div>
-                  <div className="text-xs mt-1">Купи пакети, щоб отримати гравців</div>
-                </div>
-              ) : (
-                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 max-h-[420px] overflow-y-auto pr-1">
-                  {pickerPlayers.map(f => {
-                    const inSquad = squad.includes(f.id)
-                    const overall = playerOverall(f)
-                    return (
+              {/* Scrollable content area */}
+              <div className="max-h-[52vh] sm:max-h-none overflow-y-auto">
+
+                {/* Stats panel */}
+                {panelMode === 'stats' && activePlayer && (
+                  <div className="p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="text-xs text-[#5A7090] uppercase tracking-wider">Гравець</div>
                       <button
-                        key={f.id}
-                        disabled={inSquad}
-                        onClick={() => handleSelectPlayer(f.id)}
-                        className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
-                          inSquad
-                            ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
-                            : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
-                        }`}
-                      >
-                        <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
-                          <PlayerPhoto footballer={f} />
+                        onClick={closePanel}
+                        className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
+                      >×</button>
+                    </div>
+                    <div className="flex items-center gap-4 mb-5">
+                      <div className={`w-16 h-16 rounded-full ring-2 overflow-hidden bg-black/40 shrink-0 ${rarityRing[activePlayer.rarity]}`}>
+                        <PlayerPhoto footballer={activePlayer} />
+                      </div>
+                      <div>
+                        <div className="font-oswald font-bold text-white text-lg leading-tight">{activePlayer.name}</div>
+                        <div className="text-xs text-[#5A7090]">{activePlayer.club} · {activePlayer.nationality}</div>
+                        <div className="font-oswald font-bold text-[#00E676] text-xl mt-1">{playerOverall(activePlayer)}</div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <StatBar label="Швидкість" value={activePlayer.stats.pace} />
+                      <StatBar label="Удар" value={activePlayer.stats.shooting} />
+                      <StatBar label="Пас" value={activePlayer.stats.passing} />
+                      <StatBar label="Дриблінг" value={activePlayer.stats.dribbling} />
+                    </div>
+                    <button
+                      onClick={handleRemoveFromStats}
+                      className="mt-4 w-full py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 transition-colors cursor-pointer"
+                    >
+                      Видалити зі складу
+                    </button>
+                  </div>
+                )}
+
+                {/* Player picker */}
+                {panelMode === 'pick' && activeSlot !== null && (
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <div className="text-xs text-[#5A7090] uppercase tracking-wider">Вибери гравця</div>
+                        <div className="font-oswald text-lg font-bold text-white">
+                          {POS_UA[SLOTS[activeSlot].pos]}
+                          <span className="text-[#5A7090] font-normal text-base ml-2">— позиція {activeSlot + 1}</span>
                         </div>
-                        <div className="text-[10px] font-bold text-center leading-tight text-white/90 w-full truncate">
-                          {f.name.split(' ').slice(-1)[0]}
-                        </div>
-                        <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
+                      </div>
+                      <button
+                        onClick={closePanel}
+                        className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
+                      >×</button>
+                    </div>
+
+                    {pickerPlayers.length === 0 ? (
+                      <div className="text-center py-8 text-[#5A7090]">
+                        <div className="text-4xl mb-3">🔒</div>
+                        <div className="font-oswald text-sm text-white">Немає карток на цю позицію</div>
+                        <div className="text-xs mt-1">Купи пакети, щоб отримати гравців</div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                        {pickerPlayers.map(f => {
+                          const inSquad = squad.includes(f.id)
+                          const overall = playerOverall(f)
+                          return (
+                            <button
+                              key={f.id}
+                              disabled={inSquad}
+                              onClick={() => handleSelectPlayer(f.id)}
+                              className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
+                                inSquad
+                                  ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
+                                  : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
+                              }`}
+                            >
+                              <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
+                                <PlayerPhoto footballer={f} />
+                              </div>
+                              <div className="text-[10px] font-bold text-center leading-tight text-white/90 w-full truncate">
+                                {f.name.split(' ').slice(-1)[0]}
+                              </div>
+                              <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
             </div>
           )}
 
-          {/* Idle: squad summary */}
+          {/* ── Idle: squad summary ── always in normal flow */}
           {panelMode === 'idle' && (
             <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-6 text-center">
               <div className="text-3xl mb-3">⚽</div>

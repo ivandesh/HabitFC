@@ -52,13 +52,13 @@ export function Collection() {
   const pct = Math.round((ownedCount / footballers.length) * 100)
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <div className="flex items-start justify-between gap-3 mb-6">
+    <div className="max-w-7xl mx-auto px-4 py-5 sm:py-8">
+      <div className="flex items-start justify-between gap-3 mb-5 sm:mb-6">
         <div className="min-w-0">
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
             · Твоя ·
           </div>
-          <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
+          <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Колекція
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">
@@ -68,7 +68,7 @@ export function Collection() {
         <CoinDisplay />
       </div>
 
-      <div className="w-full h-2 bg-[#1A2336] rounded-full overflow-hidden mb-7">
+      <div className="w-full h-2 bg-[#1A2336] rounded-full overflow-hidden mb-5 sm:mb-7">
         <div
           className="h-full rounded-full transition-all duration-500 glow-green"
           style={{
@@ -78,14 +78,14 @@ export function Collection() {
         />
       </div>
 
-      <div className="flex gap-2 mb-7 flex-wrap">
+      <div className="flex gap-2 mb-5 sm:mb-7 flex-wrap">
         {RARITIES.map(r => {
           const cfg = filterConfig[r]
           return (
             <button
               key={r}
               onClick={() => setFilter(r)}
-              className={`px-4 py-2 rounded-xl font-oswald font-semibold uppercase tracking-wider text-xs transition-all cursor-pointer ${
+              className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl font-oswald font-semibold uppercase tracking-wider text-xs transition-all cursor-pointer ${
                 filter === r
                   ? cfg.active
                   : 'bg-[#0A0F1A] border border-[#1A2336] text-[#5A7090] hover:border-[#2A3A50] hover:text-[#E8F0FF]'

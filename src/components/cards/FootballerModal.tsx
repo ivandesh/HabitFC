@@ -24,7 +24,7 @@ const statLabels: Record<string, string> = {
 function StatBar({ label, value, barColor }: { label: string; value: number; barColor: string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-gray-400 text-sm w-24 shrink-0">{label}</span>
+      <span className="text-gray-400 text-sm w-20 sm:w-24 shrink-0">{label}</span>
       <div className="flex-1 h-2 bg-gray-800 rounded-full overflow-hidden">
         <motion.div
           className={`h-full rounded-full ${barColor}`}
