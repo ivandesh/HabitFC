@@ -1,5 +1,5 @@
 import { useLocation, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import type { Footballer, Pack } from '../types'
 import { useAppStore } from '../store/useAppStore'
@@ -337,6 +337,7 @@ export function PackOpening() {
   const location = useLocation()
   const navigate = useNavigate()
   const buyPack = useAppStore(state => state.buyPack)
+  const pushPendingUnlock = useAppStore(state => state.pushPendingUnlock)
   const collection = useAppStore(state => state.collection)
   const state = location.state as LocationState | null
 
@@ -345,6 +346,7 @@ export function PackOpening() {
   const [flipped, setFlipped] = useState<Set<number>>(new Set())
   const [totalRefund, setTotalRefund] = useState(0)
   const [cardRefunds, setCardRefunds] = useState<Record<number, number>>({})
+  const pendingAchievements = useRef<string[]>([])
 
   if (!state?.pack || !state?.cards) {
     return (
@@ -379,6 +381,7 @@ export function PackOpening() {
 
     const result = buyPack(pack.cost, cards)
     setTotalRefund(result.refund)
+    pendingAchievements.current = [...result.newUnlockIds]
 
     // Phase 1: shake the pack
     setPhase('opening')
@@ -386,6 +389,11 @@ export function PackOpening() {
 
     // Phase 2: show the deck — user deals cards manually
     setTimeout(() => setPhase('revealing'), 1000)
+  }
+
+  function drainOneAchievement() {
+    const id = pendingAchievements.current.shift()
+    if (id) pushPendingUnlock(id)
   }
 
   function dealCard() {
@@ -401,6 +409,7 @@ export function PackOpening() {
         return next
       })
       playCardFlip(cards[idx].rarity)
+      drainOneAchievement()
     }, 450)
   }
 
@@ -409,6 +418,7 @@ export function PackOpening() {
     const next = new Set([...flipped, idx])
     setFlipped(next)
     playCardFlip(cards[idx].rarity)
+    drainOneAchievement()
     if (next.size === cards.length) {
       setTimeout(() => setPhase('done'), 600)
     }

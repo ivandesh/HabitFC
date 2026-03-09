@@ -13,7 +13,8 @@ interface AppStore extends AppState {
   reorderHabits: (ids: string[]) => void
   completeHabit: (id: string) => void
   // Shop actions
-  buyPack: (cost: number, cards: Footballer[]) => { refund: number; newCards: string[] }
+  buyPack: (cost: number, cards: Footballer[]) => { refund: number; newCards: string[]; newUnlockIds: string[] }
+  pushPendingUnlock: (id: string) => void
   // Coins
   addCoins: (amount: number) => void
   // Squad
@@ -115,12 +116,20 @@ export const useAppStore = create<AppStore>()(
           pullHistory,
         })
 
-        const newUnlocks = checkAchievements(get())
-        for (const achievementId of newUnlocks) {
-          get().unlockAchievement(achievementId)
+        // Record achievements in state but don't queue toasts yet —
+        // PackOpening will queue them as each card is flipped.
+        const newUnlockIds = checkAchievements(get())
+        if (newUnlockIds.length > 0) {
+          const unlockedAt = new Date().toISOString()
+          set(s => ({
+            achievements: Object.fromEntries([
+              ...Object.entries(s.achievements),
+              ...newUnlockIds.map(id => [id, { unlockedAt }]),
+            ]),
+          }))
         }
 
-        return { refund, newCards }
+        return { refund, newCards, newUnlockIds }
       },
 
       addCoins: (amount) => {
@@ -161,6 +170,10 @@ export const useAppStore = create<AppStore>()(
           },
           pendingUnlocks: [...state.pendingUnlocks, id],
         }))
+      },
+
+      pushPendingUnlock: (id) => {
+        set(state => ({ pendingUnlocks: [...state.pendingUnlocks, id] }))
       },
 
       drainPendingUnlock: () => {
