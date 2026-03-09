@@ -36,5 +36,9 @@ export interface AppState {
   habits: Habit[]
   collection: Record<string, number>
   pullHistory: { footballerId: string; pulledAt: string }[]
-  squad: (string | null)[]  // 11 slots: [GK, DEF×4, MID×3, FWD×3]
+  squad: (string | null)[]
+  achievements: Record<string, { unlockedAt: string }>
+  totalCompletions: number
+  formation: string
+  pendingUnlocks: string[]  // not persisted — UI drain queue
 }

@@ -18,6 +18,10 @@ interface AppStore extends AppState {
   setSquadSlot: (slotIndex: number, footballerId: string | null) => void
   // Reset
   resetAll: () => void
+  // Achievements
+  unlockAchievement: (id: string) => void
+  drainPendingUnlock: () => string | undefined
+  setFormation: (formation: string) => void
 }
 
 export const useAppStore = create<AppStore>()(
@@ -28,6 +32,10 @@ export const useAppStore = create<AppStore>()(
       collection: {},
       pullHistory: [],
       squad: Array(11).fill(null),
+      achievements: {},
+      totalCompletions: 0,
+      formation: '4-3-3',
+      pendingUnlocks: [],
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -65,6 +73,7 @@ export const useAppStore = create<AppStore>()(
                 ? { ...h, streak: newStreak, lastCompleted: getToday() }
                 : h
             ),
+            totalCompletions: state.totalCompletions + 1,
           }
         })
       },
@@ -112,11 +121,47 @@ export const useAppStore = create<AppStore>()(
       },
 
       resetAll: () => {
-        set({ coins: 200, habits: [], collection: {}, pullHistory: [], squad: Array(11).fill(null) })
+        set({
+          coins: 200,
+          habits: [],
+          collection: {},
+          pullHistory: [],
+          squad: Array(11).fill(null),
+          achievements: {},
+          totalCompletions: 0,
+          formation: '4-3-3',
+          pendingUnlocks: [],
+        })
+      },
+
+      unlockAchievement: (id) => {
+        set(state => ({
+          achievements: {
+            ...state.achievements,
+            [id]: { unlockedAt: new Date().toISOString() },
+          },
+          pendingUnlocks: [...state.pendingUnlocks, id],
+        }))
+      },
+
+      drainPendingUnlock: () => {
+        const state = get()
+        if (state.pendingUnlocks.length === 0) return undefined
+        const [next, ...rest] = state.pendingUnlocks
+        set({ pendingUnlocks: rest })
+        return next
+      },
+
+      setFormation: (formation) => {
+        set({ formation, squad: Array(11).fill(null) })
       },
     }),
     {
       name: 'habit-tracker-store',
+      partialize: (state) => {
+        const { pendingUnlocks, ...rest } = state
+        return rest
+      },
     }
   )
 )
