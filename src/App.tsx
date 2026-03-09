@@ -5,6 +5,7 @@ import { Shop } from './pages/Shop'
 import { PackOpening } from './pages/PackOpening'
 import { Collection } from './pages/Collection'
 import { Team } from './pages/Team'
+import { Achievements } from './pages/Achievements'
 import { useAppStore } from './store/useAppStore'
 
 function NavBar() {
@@ -36,6 +37,7 @@ function NavBar() {
         <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
         <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
         <NavLink to="/team" className={linkClass}>Склад</NavLink>
+        <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
         <div className="ml-auto shrink-0">
           <button
             onClick={handleReset}
@@ -62,6 +64,7 @@ export default function App() {
           <Route path="/open" element={<PackOpening />} />
           <Route path="/collection" element={<Collection />} />
           <Route path="/team" element={<Team />} />
+          <Route path="/achievements" element={<Achievements />} />
         </Routes>
       </div>
     </BrowserRouter>
