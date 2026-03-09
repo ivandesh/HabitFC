@@ -1,10 +1,11 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
 import type { Footballer, Pack } from '../types'
 import { useAppStore } from '../store/useAppStore'
 import { FootballerCard } from '../components/cards/FootballerCard'
 import { CoinIcon } from '../components/ui/CoinIcon'
+import { playPackOpen, playCardSlide, playCardFlip } from '../lib/sounds'
 
 interface LocationState {
   pack: Pack
@@ -142,7 +143,7 @@ function CardBack({ packId }: { packId: string }) {
   const theme = getTheme(packId)
   return (
     <div
-      className="w-52 h-80 rounded-2xl border-2 overflow-hidden flex flex-col"
+      className="w-full h-full rounded-2xl border-2 overflow-hidden flex flex-col"
       style={{
         background: theme.gradient,
         borderColor: theme.border,
@@ -194,17 +195,25 @@ function FlipCard({
   flipped,
   refund,
   packId,
+  onClick,
 }: {
   footballer: Footballer
   flipped: boolean
   refund?: number
   packId: string
+  onClick?: () => void
 }) {
   return (
-    <div className="relative" style={{ perspective: 1100, width: '13rem', height: '20rem' }}>
+    <motion.div
+      className="relative"
+      style={{ perspective: 1050, width: '12rem', height: '18.5rem', cursor: flipped ? 'default' : 'pointer' }}
+      whileHover={!flipped ? { scale: 1.04 } : {}}
+      transition={{ duration: 0.15 }}
+      onClick={!flipped ? onClick : undefined}
+    >
       {/* 3D flip wrapper */}
       <motion.div
-        style={{ transformStyle: 'preserve-3d', width: '13rem', height: '20rem' }}
+        style={{ transformStyle: 'preserve-3d', width: '12rem', height: '18.5rem' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.65, ease: [0.645, 0.045, 0.355, 1.0] }}
       >
@@ -228,6 +237,26 @@ function FlipCard({
         </div>
       </motion.div>
 
+      {/* Tap to reveal hint */}
+      <AnimatePresence>
+        {!flipped && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 flex flex-col items-center justify-end pb-5 z-30 pointer-events-none"
+          >
+            <motion.div
+              animate={{ opacity: [0.5, 1, 0.5] }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              className="font-oswald text-[11px] tracking-[0.2em] uppercase text-white/60"
+            >
+              Натисніть
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Duplicate refund badge */}
       <AnimatePresence>
         {refund !== undefined && flipped && (
@@ -240,6 +269,65 @@ function FlipCard({
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+  )
+}
+
+// ─── Deck (stacked face-down cards) ──────────────────────────────────────────
+function Deck({ pack, remaining, nextIndex, onDeal }: {
+  pack: Pack
+  remaining: number
+  nextIndex: number
+  onDeal: () => void
+}) {
+  const shadowCount = Math.min(remaining - 1, 3)
+  return (
+    <div className="flex flex-col items-center gap-4">
+      <motion.div
+        className="relative cursor-pointer"
+        style={{ width: '12rem', height: '18.5rem' }}
+        whileHover={{ y: -8 }}
+        transition={{ duration: 0.18 }}
+        onClick={onDeal}
+      >
+        {/* Shadow cards peeking below */}
+        {Array.from({ length: shadowCount }).map((_, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            top: (shadowCount - i) * 6,
+            left: 0, right: 0,
+            zIndex: i + 1,
+            opacity: 0.6 + i * 0.1,
+          }}>
+            <CardBack packId={pack.id} />
+          </div>
+        ))}
+
+        {/* Top card — key forces unmount/remount so layoutId animation fires every time */}
+        <motion.div
+          key={nextIndex}
+          layoutId={`card-${nextIndex}`}
+          style={{ position: 'relative', zIndex: shadowCount + 1, width: '12rem', height: '18.5rem' }}
+        >
+          <CardBack packId={pack.id} />
+        </motion.div>
+
+        {/* Tap hint */}
+        <motion.div
+          className="absolute inset-0 flex items-end justify-center pb-5 pointer-events-none"
+          style={{ zIndex: shadowCount + 2 }}
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+        >
+          <span className="font-oswald text-[11px] tracking-[0.2em] uppercase text-white/60">
+            Натисніть
+          </span>
+        </motion.div>
+      </motion.div>
+
+      <div className="font-oswald text-xs tracking-[0.25em] text-white/40 uppercase">
+        {remaining} {remaining === 1 ? 'картка' : remaining < 5 ? 'картки' : 'карток'}
+      </div>
     </div>
   )
 }
@@ -294,42 +382,66 @@ export function PackOpening() {
 
     // Phase 1: shake the pack
     setPhase('opening')
+    playPackOpen()
 
-    // Phase 2: after shake + burst, start sliding cards in
+    // Phase 2: show the deck — user deals cards manually
+    setTimeout(() => setPhase('revealing'), 1000)
+  }
+
+  function dealCard() {
+    if (revealed >= cards.length) return
+    const idx = revealed
+    setRevealed(prev => prev + 1)
+    playCardSlide()
+    // Auto-flip after the layout animation lands
     setTimeout(() => {
-      setPhase('revealing')
+      setFlipped(prev => {
+        const next = new Set([...prev, idx])
+        if (next.size === cards.length) setTimeout(() => setPhase('done'), 600)
+        return next
+      })
+      playCardFlip(cards[idx].rarity)
+    }, 450)
+  }
 
-      let count = 0
-      const interval = setInterval(() => {
-        count++
-        setRevealed(count)
-
-        // Flip each card 700ms after it slides in
-        const idx = count - 1
-        setTimeout(() => {
-          setFlipped(prev => new Set([...prev, idx]))
-        }, 700)
-
-        if (count >= cards.length) {
-          clearInterval(interval)
-          setTimeout(() => setPhase('done'), 1000)
-        }
-      }, 1400)
-    }, 1000) // 1s for pack opening animation
+  function handleFlipCard(idx: number) {
+    if (flipped.has(idx)) return
+    const next = new Set([...flipped, idx])
+    setFlipped(next)
+    playCardFlip(cards[idx].rarity)
+    if (next.size === cards.length) {
+      setTimeout(() => setPhase('done'), 600)
+    }
   }
 
   return (
-    <div className="flex flex-col items-center min-h-screen px-4 py-10 gap-8 relative overflow-hidden">
+    <div className="flex flex-col items-center min-h-screen px-4 py-10 gap-8 relative" style={{ overflow: 'clip' }}>
 
-      {/* ── Pack area (confirm + opening) ─────────────────────── */}
+      {/* ── White flash — fixed, no layout impact ──────────────── */}
       <AnimatePresence>
+        {phase === 'opening' && (
+          <motion.div
+            key="flash"
+            className="fixed inset-0 pointer-events-none z-50"
+            style={{ background: `radial-gradient(ellipse at center, ${theme.shimmer}, transparent 70%)` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 0, 1.0, 0] }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.9, times: [0, 0.6, 0.8, 1] }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* ── Main content: pack → cards, no simultaneous render ─── */}
+      <AnimatePresence mode="wait">
+
+        {/* Pack area (confirm + opening) */}
         {(phase === 'confirm' || phase === 'opening') && (
           <motion.div
             key="pack-area"
             className="flex flex-col items-center gap-6"
-            exit={{ scale: 1.4, opacity: 0, y: -60, transition: { duration: 0.45, ease: 'easeIn' } }}
+            exit={{ scale: 1.4, opacity: 0, y: -60, transition: { duration: 0.4, ease: 'easeIn' } }}
           >
-            {/* Floating idle / shake-on-open */}
             <motion.div
               animate={
                 phase === 'opening'
@@ -346,7 +458,6 @@ export function PackOpening() {
               <PackVisual pack={pack} />
             </motion.div>
 
-            {/* Confirm controls */}
             <AnimatePresence>
               {phase === 'confirm' && (
                 <motion.div
@@ -386,100 +497,111 @@ export function PackOpening() {
             </AnimatePresence>
           </motion.div>
         )}
-      </AnimatePresence>
 
-      {/* ── White flash on opening ─────────────────────────────── */}
-      <AnimatePresence>
-        {phase === 'opening' && (
+        {/* Cards area (revealing + done) */}
+        {(phase === 'revealing' || phase === 'done') && (
           <motion.div
-            key="flash"
-            className="fixed inset-0 pointer-events-none z-50"
-            style={{ background: `radial-gradient(ellipse at center, ${theme.shimmer}, transparent 70%)` }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: [0, 0, 1.0, 0] }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.9, times: [0, 0.6, 0.8, 1] }}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* ── Revealed cards sliding in ──────────────────────────── */}
-      {(phase === 'revealing' || phase === 'done') && (
-        <>
-          {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
+            key="cards-area"
+            className="flex flex-col items-center gap-8 w-full"
+            initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center"
+            transition={{ duration: 0.35, ease: 'easeOut' }}
           >
-            <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
-              · Відкриваємо ·
+            {/* Header */}
+            <div className="text-center">
+              <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
+                {revealed < cards.length
+                  ? `· ${cards.length - revealed} карток залишилось ·`
+                  : flipped.size < cards.length
+                  ? `· Відкрито ${flipped.size} / ${cards.length} ·`
+                  : '· Всі картки відкрито ·'}
+              </div>
+              <h1 className="font-oswald text-3xl sm:text-4xl font-bold uppercase tracking-wide text-white leading-none">
+                {pack.name}
+              </h1>
             </div>
-            <h1 className="font-oswald text-3xl sm:text-4xl font-bold uppercase tracking-wide text-white leading-none">
-              {pack.name}
-            </h1>
-          </motion.div>
 
-          {/* Cards row — all slots pre-allocated to prevent layout jumps */}
-          <div className="flex flex-wrap gap-5 justify-center max-w-5xl">
-            {cards.map((card, i) => (
-              <div key={i} style={{ width: '13rem', height: '20rem', position: 'relative' }}>
-                {i < revealed && (
+            <LayoutGroup>
+              {/* Deck — visible while cards remain */}
+              <AnimatePresence>
+                {revealed < cards.length && (
                   <motion.div
-                    style={{ position: 'absolute', inset: 0 }}
-                    initial={{ y: -320, opacity: 0, scale: 0.85 }}
-                    animate={{ y: 0, opacity: 1, scale: 1 }}
-                    transition={{ type: 'spring', stiffness: 160, damping: 20 }}
+                    key="deck"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.85, transition: { duration: 0.25 } }}
                   >
-                    <FlipCard
-                      footballer={card}
-                      flipped={flipped.has(i)}
-                      refund={cardRefunds[i]}
-                      packId={pack.id}
+                    <Deck
+                      pack={pack}
+                      remaining={cards.length - revealed}
+                      nextIndex={revealed}
+                      onDeal={dealCard}
                     />
                   </motion.div>
                 )}
-              </div>
-            ))}
-          </div>
+              </AnimatePresence>
 
-          {/* Done controls */}
-          <AnimatePresence>
-            {phase === 'done' && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="flex flex-col items-center gap-4"
-              >
-                {totalRefund > 0 && (
-                  <motion.p
-                    initial={{ scale: 0.8, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className="text-yellow-400 font-semibold text-lg flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-5 py-2 rounded-xl"
-                  >
-                    Повернення за дублікати: +{totalRefund} <CoinIcon size={18} />
-                  </motion.p>
-                )}
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => navigate('/shop')}
-                    className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
-                  >
-                    Назад до магазину
-                  </button>
-                  <button
-                    onClick={() => navigate('/collection')}
-                    className="px-6 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
-                  >
-                    Переглянути колекцію
-                  </button>
+              {/* Row of dealt cards — grows as user deals */}
+              {revealed > 0 && (
+                <div className="flex flex-nowrap gap-3 justify-center py-4">
+                  {cards.slice(0, revealed).map((card, i) => (
+                    <motion.div
+                      key={i}
+                      layoutId={`card-${i}`}
+                      style={{ width: '12rem', height: '18.5rem', flexShrink: 0 }}
+                    >
+                      <FlipCard
+                        footballer={card}
+                        flipped={flipped.has(i)}
+                        refund={cardRefunds[i]}
+                        packId={pack.id}
+                        onClick={() => handleFlipCard(i)}
+                      />
+                    </motion.div>
+                  ))}
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </>
-      )}
+              )}
+            </LayoutGroup>
+
+            {/* Done controls */}
+            <AnimatePresence>
+              {phase === 'done' && (
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 }}
+                  className="flex flex-col items-center gap-4"
+                >
+                  {totalRefund > 0 && (
+                    <motion.p
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="text-yellow-400 font-semibold text-lg flex items-center gap-2 bg-yellow-400/10 border border-yellow-400/30 px-5 py-2 rounded-xl"
+                    >
+                      Повернення за дублікати: +{totalRefund} <CoinIcon size={18} />
+                    </motion.p>
+                  )}
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => navigate('/shop')}
+                      className="px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                    >
+                      Назад до магазину
+                    </button>
+                    <button
+                      onClick={() => navigate('/collection')}
+                      className="px-6 py-3 bg-pink-600 hover:bg-pink-500 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer transition-colors"
+                    >
+                      Переглянути колекцію
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        )}
+
+      </AnimatePresence>
     </div>
   )
 }

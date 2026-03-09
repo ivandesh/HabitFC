@@ -3,6 +3,7 @@ import { useAppStore } from '../../store/useAppStore'
 import { StreakBadge } from '../ui/StreakBadge'
 import { CoinIcon } from '../ui/CoinIcon'
 import { isCompletedToday, streakMultiplier } from '../../lib/streaks'
+import { playHabitComplete } from '../../lib/sounds'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -99,7 +100,7 @@ export function HabitCard({ habit }: Props) {
           </div>
         ) : (
           <button
-            onClick={() => completeHabit(habit.id)}
+            onClick={() => { completeHabit(habit.id); playHabitComplete() }}
             className="w-full py-2.5 bg-[#00E676] hover:bg-[#00FF87] text-[#04060A] font-oswald font-bold uppercase tracking-widest rounded-xl transition-all cursor-pointer text-sm glow-green-btn"
           >
             Готово ✓

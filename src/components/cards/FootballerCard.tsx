@@ -41,17 +41,17 @@ export function FootballerCard({ footballer, owned, mini = false }: Props) {
   }
 
   return (
-    <div className={`border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} rounded-2xl p-5 flex flex-col items-center gap-3 w-52`}>
+    <div className={`border-2 ${cfg.border} ${cfg.bg} ${cfg.glow} rounded-2xl p-4 flex flex-col items-center gap-2 w-full h-full`}>
       <div className={`text-xs font-bold tracking-widest ${cfg.labelColor}`}>{cfg.label}</div>
       {footballer.photoUrl ? (
         <img
           src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
           alt={footballer.name}
-          className="w-24 h-24 object-contain rounded-full bg-black/30"
+          className="w-20 h-20 object-contain rounded-full bg-black/30"
           onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
         />
       ) : (
-        <div className="text-7xl">{footballer.emoji}</div>
+        <div className="text-6xl">{footballer.emoji}</div>
       )}
       <div className="text-center">
         <div className="font-bold text-lg leading-tight">{footballer.name}</div>
