@@ -4,13 +4,14 @@ import { ACHIEVEMENTS } from '../lib/achievements'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import type { AppState } from '../types'
 
-type Category = 'all' | 'habits' | 'collection' | 'team'
+type Category = 'all' | 'habits' | 'collection' | 'team' | 'memes'
 
 const TABS: { key: Category; label: string }[] = [
   { key: 'all', label: 'Усі' },
   { key: 'habits', label: 'Звички' },
   { key: 'collection', label: 'Колекція' },
   { key: 'team', label: 'Команда' },
+  { key: 'memes', label: 'Меми' },
 ]
 
 export function Achievements() {

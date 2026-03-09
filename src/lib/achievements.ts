@@ -5,7 +5,7 @@ export interface AchievementDef {
   id: string
   titleUA: string
   descUA: string
-  category: 'habits' | 'collection' | 'team'
+  category: 'habits' | 'collection' | 'team' | 'memes'
   icon: string
   progressFn?: (state: AppState) => { current: number; total: number }
   condition: (state: AppState) => boolean
@@ -259,19 +259,147 @@ export const ACHIEVEMENTS: AchievementDef[] = [
       return overall >= 85
     },
   },
+
+  // ── Memes ─────────────────────────────────────────────────────────────────────
   {
-    id: 'all_positions',
-    titleUA: 'Повний склад',
-    descUA: 'Постав хоча б одного гравця на кожну позицію',
-    category: 'team',
-    icon: '🗺️',
-    condition: s => {
-      const positionsInSquad = s.squad
-        .filter((id): id is string => id !== null)
-        .map(id => footballers.find(f => f.id === id)?.position)
-        .filter(Boolean)
-      return (['GK', 'DEF', 'MID', 'FWD'] as const).every(pos => positionsInSquad.includes(pos))
-    },
+    id: 'siiiiu',
+    titleUA: 'СІІІУУ!',
+    descUA: 'Отримай Роналду. Він вже святкує.',
+    category: 'memes',
+    icon: '🎤',
+    condition: s => (s.collection['ronaldo'] ?? 0) > 0,
+  },
+  {
+    id: 'goat_card',
+    titleUA: 'Козел',
+    descUA: 'Отримай Мессі. G.O.A.T. у кишені.',
+    category: 'memes',
+    icon: '🐐',
+    condition: s => (s.collection['messi'] ?? 0) > 0,
+  },
+  {
+    id: 'cyborg',
+    titleUA: 'Кіборг',
+    descUA: 'Отримай Голанда. Він не людина.',
+    category: 'memes',
+    icon: '🤖',
+    condition: s => (s.collection['haaland'] ?? 0) > 0,
+  },
+  {
+    id: 'still_running',
+    titleUA: 'Ще бігає?!',
+    descUA: 'Отримай Модріча. Він невмирущий.',
+    category: 'memes',
+    icon: '👴',
+    condition: s => (s.collection['modric'] ?? 0) > 0,
+  },
+  {
+    id: 'samba_time',
+    titleUA: 'Самба Тайм',
+    descUA: 'Отримай Вініcіуса. Він вже танцює.',
+    category: 'memes',
+    icon: '💃',
+    condition: s => (s.collection['vinicius'] ?? 0) > 0,
+  },
+  {
+    id: 'sweeper_keeper',
+    titleUA: 'Польовий Воротар',
+    descUA: 'Отримай Нойєра. Він впевнений, що він захисник.',
+    category: 'memes',
+    icon: '🧤',
+    condition: s => (s.collection['neuer'] ?? 0) > 0,
+  },
+  {
+    id: 'nine_minutes',
+    titleUA: '5 за 9 хвилин',
+    descUA: 'Отримай Левандовського. Знову 5 голів?',
+    category: 'memes',
+    icon: '⚡',
+    condition: s => (s.collection['lewandowski'] ?? 0) > 0,
+  },
+  {
+    id: 'too_young',
+    titleUA: 'Занадто Молодий',
+    descUA: 'Отримай Ямала. Він молодший за тебе. І він вже чемпіон Європи.',
+    category: 'memes',
+    icon: '🍼',
+    condition: s => (s.collection['yamal'] ?? 0) > 0,
+  },
+  {
+    id: 'fragile_genius',
+    titleUA: 'Крихкий Геній',
+    descUA: 'Отримай Педрі. Найталановитіший гравець покоління. Фізіотерапевт Барселони знає його краще за тренера.',
+    category: 'memes',
+    icon: '🩹',
+    condition: s => (s.collection['pedri'] ?? 0) > 0,
+  },
+  {
+    id: 'mentality_monster',
+    titleUA: 'Менталітет',
+    descUA: 'Отримай Кіммiха. Менталітет. Характер. Воля до перемоги.',
+    category: 'memes',
+    icon: '🧠',
+    condition: s => (s.collection['kimmich'] ?? 0) > 0,
+  },
+  {
+    id: 'wall_of_milan',
+    titleUA: 'Стіна Мілану',
+    descUA: 'Отримай Доннаруму. 1.96 метра чистого жаху. Нападники підходять до штрафної і просто плачуть.',
+    category: 'memes',
+    icon: '🏔️',
+    condition: s => (s.collection['donnarumma'] ?? 0) > 0,
+  },
+  {
+    id: 'arteta_invention',
+    titleUA: 'Винахід Артети',
+    descUA: 'Отримай Зінченка. Артета вигадав для нього нову позицію: лівий центральний атакуючий захисний півзахисник.',
+    category: 'memes',
+    icon: '🧩',
+    condition: s => (s.collection['zinchenko'] ?? 0) > 0,
+  },
+  {
+    id: 'everton_survivor',
+    titleUA: 'Евертон Сюрвайвор',
+    descUA: 'Отримай Миколенка. Грати в Евертоні та залишатися психічно здоровим — це вже досягнення.',
+    category: 'memes',
+    icon: '⚓',
+    condition: s => (s.collection['mykolenko'] ?? 0) > 0,
+  },
+  {
+    id: 'ukraine_in_apl',
+    titleUA: 'Україна в АПЛ',
+    descUA: 'Зінченко і Миколенко в колекції. АПЛ — наш. Лівий фланг — наш. Слава Україні.',
+    category: 'memes',
+    icon: '🌻',
+    condition: s => (s.collection['zinchenko'] ?? 0) > 0 && (s.collection['mykolenko'] ?? 0) > 0,
+  },
+  {
+    id: 'hospital_vip',
+    titleUA: 'VIP Палата',
+    descUA: 'Отримай Неймара. Він не грає. Він ніколи не грає. Але картка красива.',
+    category: 'memes',
+    icon: '🏥',
+    condition: s => (s.collection['neymar'] ?? 0) > 0,
+  },
+  {
+    id: 'eternal_debate',
+    titleUA: 'Вічна Суперечка',
+    descUA: 'Маєш і Мессі, і Роналду. Тепер сперечайся сам із собою до 3 ночі.',
+    category: 'memes',
+    icon: '⚔️',
+    condition: s => (s.collection['messi'] ?? 0) > 0 && (s.collection['ronaldo'] ?? 0) > 0,
+  },
+  {
+    id: 'wonderkids_assembly',
+    titleUA: 'Збори Дива',
+    descUA: 'Ямал, Беллінгем, Мусіала і Вірц. Кожен — "наступний Мессі". Хто правий?',
+    category: 'memes',
+    icon: '✨',
+    condition: s =>
+      (s.collection['yamal'] ?? 0) > 0 &&
+      (s.collection['bellingham'] ?? 0) > 0 &&
+      (s.collection['musiala'] ?? 0) > 0 &&
+      (s.collection['wirtz'] ?? 0) > 0,
   },
 ]
 
