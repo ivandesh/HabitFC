@@ -6,6 +6,7 @@ import { useAppStore } from '../store/useAppStore'
 import { FootballerCard } from '../components/cards/FootballerCard'
 import { CoinIcon } from '../components/ui/CoinIcon'
 import { playPackOpen, playCardSlide, playCardFlip } from '../lib/sounds'
+import { duplicateRefund } from '../lib/gacha'
 
 interface LocationState {
   pack: Pack
@@ -372,8 +373,7 @@ export function PackOpening() {
     for (let i = 0; i < cards.length; i++) {
       const card = cards[i]
       if ((tempOwned[card.id] ?? 0) > 0) {
-        const refundMap: Record<string, number> = { common: 5, rare: 15, epic: 40, legendary: 100 }
-        perCardRefunds[i] = refundMap[card.rarity]
+        perCardRefunds[i] = duplicateRefund(card.rarity)
       }
       tempOwned[card.id] = (tempOwned[card.id] ?? 0) + 1
     }
