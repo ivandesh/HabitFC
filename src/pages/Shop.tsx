@@ -12,7 +12,7 @@ export function Shop() {
   function handleBuy(packId: string) {
     const pack = packs.find(p => p.id === packId)
     if (!pack || coins < pack.cost) return
-    const cards = openPack(pack)
+    const { cards } = openPack(pack, 0)
     navigate('/open', { state: { pack, cards } })
   }
 

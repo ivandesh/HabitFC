@@ -1,12 +1,21 @@
 import type { Footballer, Pack, Rarity } from '../types'
 import { footballers } from '../data/footballers'
 
-function pickRarity(weights: Record<Rarity, number>): Rarity {
+const PITY_THRESHOLD = 10   // packs without legendary before pity starts
+const PITY_INCREMENT = 2    // % added per pack beyond threshold
+const PITY_CAP = 50         // max legendary weight
+
+function pickRarity(weights: Record<Rarity, number>, pityCounter: number): Rarity {
+  const legendaryWeight = Math.min(
+    weights.legendary + Math.max(0, pityCounter - PITY_THRESHOLD) * PITY_INCREMENT,
+    PITY_CAP,
+  )
+
   const entries: [Rarity, number][] = [
     ['common', weights.common],
     ['rare', weights.rare],
     ['epic', weights.epic],
-    ['legendary', weights.legendary],
+    ['legendary', legendaryWeight],
   ]
   const total = entries.reduce((sum, [, w]) => sum + w, 0)
   let roll = Math.random() * total
@@ -22,20 +31,26 @@ function pickCard(rarity: Rarity): Footballer {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-export function openPack(pack: Pack): Footballer[] {
-  const results: Footballer[] = []
+/** Opens a pack and returns the cards plus the updated pity counter for this pack type. */
+export function openPack(pack: Pack, pityCounter: number): { cards: Footballer[]; nextPityCounter: number } {
+  const cards: Footballer[] = []
+  let gotLegendary = false
+
   for (let i = 0; i < pack.cardCount; i++) {
-    const rarity = pickRarity(pack.weights)
-    results.push(pickCard(rarity))
+    const rarity = pickRarity(pack.weights, pityCounter)
+    if (rarity === 'legendary') gotLegendary = true
+    cards.push(pickCard(rarity))
   }
-  return results
+
+  const nextPityCounter = gotLegendary ? 0 : pityCounter + 1
+  return { cards, nextPityCounter }
 }
 
 export function duplicateRefund(rarity: Rarity): number {
   switch (rarity) {
-    case 'common': return 5
-    case 'rare': return 15
-    case 'epic': return 40
-    case 'legendary': return 100
+    case 'common': return 10
+    case 'rare': return 30
+    case 'epic': return 80
+    case 'legendary': return 200
   }
 }
