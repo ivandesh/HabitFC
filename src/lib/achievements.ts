@@ -229,8 +229,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
-        .map(id => footballers.find(f => f.id === id)!)
-        .filter(Boolean)
+        .map(id => footballers.find(f => f.id === id))
+        .filter((f): f is typeof footballers[0] => f !== undefined)
       let links = 0
       for (let i = 0; i < players.length; i++)
         for (let j = i + 1; j < players.length; j++)
@@ -248,8 +248,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
-        .map(id => footballers.find(f => f.id === id)!)
-        .filter(Boolean)
+        .map(id => footballers.find(f => f.id === id))
+        .filter((f): f is typeof footballers[0] => f !== undefined)
       if (players.length === 0) return false
       const overall = Math.round(
         players.reduce((sum, f) =>

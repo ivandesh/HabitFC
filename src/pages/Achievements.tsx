@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { ACHIEVEMENTS } from '../lib/achievements'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
@@ -15,7 +15,13 @@ const TABS: { key: Category; label: string }[] = [
 
 export function Achievements() {
   const achievements = useAppStore(state => state.achievements)
-  const fullState = useAppStore(s => s) as AppState
+  const totalCompletions = useAppStore(state => state.totalCompletions)
+  const collection = useAppStore(state => state.collection)
+  const squad = useAppStore(state => state.squad)
+  const progressState = useMemo(
+    () => ({ achievements, totalCompletions, collection, squad } as AppState),
+    [achievements, totalCompletions, collection, squad]
+  )
   const [tab, setTab] = useState<Category>('all')
 
   const filtered = ACHIEVEMENTS.filter(a => tab === 'all' || a.category === tab)
@@ -72,7 +78,7 @@ export function Achievements() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {filtered.map(a => {
           const unlocked = !!achievements[a.id]
-          const progress = a.progressFn?.(fullState)
+          const progress = a.progressFn?.(progressState)
 
           return (
             <div

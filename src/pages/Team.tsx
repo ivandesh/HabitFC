@@ -4,7 +4,7 @@ import { footballers } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
-import type { Position } from '../types'
+import type { AppState, Position } from '../types'
 
 const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
 
@@ -87,7 +87,7 @@ export function Team() {
   const setSquadSlot = useAppStore(state => state.setSquadSlot)
   const setFormation = useAppStore(state => state.setFormation)
   const collection = useAppStore(state => state.collection)
-  const fullState = useAppStore(s => s)
+  const squadForBonuses = useAppStore(state => state.squad)
 
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
   const [panelMode, setPanelMode] = useState<PanelMode>('idle')
@@ -113,7 +113,7 @@ export function Team() {
     return Math.round(filledPlayers.reduce((s, f) => s + playerOverall(f), 0) / filledPlayers.length)
   }, [filledPlayers])
 
-  const activeBonuses = useMemo(() => computeActiveBonuses(fullState as any), [fullState])
+  const activeBonuses = useMemo(() => computeActiveBonuses({ squad: squadForBonuses } as AppState), [squadForBonuses])
   const bonusPct = totalBonusPercent(activeBonuses)
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null

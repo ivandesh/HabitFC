@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useAppStore } from '../../store/useAppStore'
 import { ACHIEVEMENTS } from '../../lib/achievements'
@@ -8,6 +8,7 @@ export function AchievementToastManager() {
   const drainPendingUnlock = useAppStore(state => state.drainPendingUnlock)
   const [current, setCurrent] = useState<{ id: string; titleUA: string; icon: string } | null>(null)
   const [queue, setQueue] = useState<string[]>([])
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // Drain store into local queue every 300ms
   useEffect(() => {
@@ -27,7 +28,10 @@ export function AchievementToastManager() {
     if (!def) return
     setCurrent({ id: next, titleUA: def.titleUA, icon: def.icon })
     playAchievementUnlock()
-    setTimeout(() => setCurrent(null), 4000)
+    timerRef.current = setTimeout(() => setCurrent(null), 4000)
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current)
+    }
   }, [current, queue])
 
   return (

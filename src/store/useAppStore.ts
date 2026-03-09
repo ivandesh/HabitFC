@@ -171,6 +171,7 @@ export const useAppStore = create<AppStore>()(
         return next
       },
 
+      /** Updates formation and resets squad to all-null (positions change between formations). */
       setFormation: (formation) => {
         set({ formation, squad: Array(11).fill(null) })
       },
