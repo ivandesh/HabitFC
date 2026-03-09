@@ -2,17 +2,9 @@ import { useState, useMemo } from 'react'
 import { useAppStore } from '../store/useAppStore'
 import { footballers } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
+import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
+import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import type { Position } from '../types'
-
-type SlotDef = { pos: Position; x: number; y: number }
-
-const SLOTS: SlotDef[] = [
-  { pos: 'GK',  x: 50, y: 86 },
-  { pos: 'DEF', x: 17, y: 70 }, { pos: 'DEF', x: 37, y: 70 },
-  { pos: 'DEF', x: 63, y: 70 }, { pos: 'DEF', x: 83, y: 70 },
-  { pos: 'MID', x: 22, y: 51 }, { pos: 'MID', x: 50, y: 46 }, { pos: 'MID', x: 78, y: 51 },
-  { pos: 'FWD', x: 18, y: 27 }, { pos: 'FWD', x: 50, y: 18 }, { pos: 'FWD', x: 82, y: 27 },
-]
 
 const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
 
@@ -34,37 +26,40 @@ function playerOverall(f: typeof footballers[0]) {
   return Math.round((f.stats.pace + f.stats.shooting + f.stats.passing + f.stats.dribbling) / 4)
 }
 
+function StatBar({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-[10px] text-[#5A7090] w-16 shrink-0 font-oswald uppercase">{label}</span>
+      <div className="flex-1 h-1.5 bg-[#1A2336] rounded-full overflow-hidden">
+        <div
+          className="h-full rounded-full bg-[#00E676]"
+          style={{ width: `${value}%` }}
+        />
+      </div>
+      <span className="text-[10px] font-bold text-white w-6 text-right">{value}</span>
+    </div>
+  )
+}
+
 function PitchSVG() {
   return (
     <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Alternating stripes */}
       {[0,1,2,3,4,5,6,7].map(i => (
         <rect key={i} x="0" y={i * 50} width="300" height="50"
           fill={i % 2 === 0 ? 'transparent' : 'black'} fillOpacity="0.06" />
       ))}
-      {/* Outer border */}
       <rect x="12" y="12" width="276" height="376" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      {/* Center line */}
       <line x1="12" y1="200" x2="288" y2="200" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      {/* Center circle */}
       <circle cx="150" cy="200" r="46" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
       <circle cx="150" cy="200" r="2.5" fill="white" fillOpacity="0.3" />
-      {/* Top penalty box */}
       <rect x="72" y="12" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      {/* Top 6-yard box */}
       <rect x="108" y="12" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
-      {/* Top goal */}
       <rect x="126" y="6" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
-      {/* Bottom penalty box */}
       <rect x="72" y="324" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      {/* Bottom 6-yard box */}
       <rect x="108" y="362" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
-      {/* Bottom goal */}
       <rect x="126" y="382" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
-      {/* Penalty spots */}
       <circle cx="150" cy="88" r="2.5" fill="white" fillOpacity="0.3" />
       <circle cx="150" cy="312" r="2.5" fill="white" fillOpacity="0.3" />
-      {/* Penalty arcs */}
       <path d="M 100 76 A 50 50 0 0 0 200 76" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
       <path d="M 100 324 A 50 50 0 0 1 200 324" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
     </svg>
@@ -84,11 +79,21 @@ function PlayerPhoto({ footballer }: { footballer: typeof footballers[0] }) {
   )
 }
 
+type PanelMode = 'idle' | 'pick' | 'stats'
+
 export function Team() {
   const squad = useAppStore(state => state.squad ?? Array(11).fill(null))
+  const formation = useAppStore(state => state.formation ?? '4-3-3')
   const setSquadSlot = useAppStore(state => state.setSquadSlot)
+  const setFormation = useAppStore(state => state.setFormation)
   const collection = useAppStore(state => state.collection)
+  const fullState = useAppStore(s => s)
+
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
+  const [panelMode, setPanelMode] = useState<PanelMode>('idle')
+
+  const formationDef = FORMATIONS[formation] ?? FORMATIONS['4-3-3']
+  const SLOTS = formationDef.slots
 
   const ownedIds = useMemo(
     () => new Set(Object.keys(collection).filter(id => (collection[id] ?? 0) > 0)),
@@ -108,16 +113,8 @@ export function Team() {
     return Math.round(filledPlayers.reduce((s, f) => s + playerOverall(f), 0) / filledPlayers.length)
   }, [filledPlayers])
 
-  const chemistry = useMemo(() => {
-    let links = 0
-    for (let i = 0; i < filledPlayers.length; i++)
-      for (let j = i + 1; j < filledPlayers.length; j++)
-        if (
-          filledPlayers[i].club === filledPlayers[j].club ||
-          filledPlayers[i].nationality === filledPlayers[j].nationality
-        ) links++
-    return links
-  }, [filledPlayers])
+  const activeBonuses = useMemo(() => computeActiveBonuses(fullState as any), [fullState])
+  const bonusPct = totalBonusPercent(activeBonuses)
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
@@ -129,28 +126,61 @@ export function Team() {
   }, [activeSlotDef, ownedIds])
 
   function handleSlotClick(idx: number) {
-    setActiveSlot(prev => prev === idx ? null : idx)
+    const footballerId = squad[idx] ?? null
+    if (footballerId) {
+      setActiveSlot(idx)
+      setPanelMode('stats')
+    } else {
+      if (activeSlot === idx) {
+        setActiveSlot(null)
+        setPanelMode('idle')
+      } else {
+        setActiveSlot(idx)
+        setPanelMode('pick')
+      }
+    }
   }
 
   function handleSelectPlayer(footballerId: string) {
     if (activeSlot === null) return
     setSquadSlot(activeSlot, footballerId)
     setActiveSlot(null)
+    setPanelMode('idle')
+  }
+
+  function handleRemoveFromStats() {
+    if (activeSlot === null) return
+    setSquadSlot(activeSlot, null)
+    setActiveSlot(null)
+    setPanelMode('idle')
   }
 
   function handleRemovePlayer(idx: number, e: React.MouseEvent) {
     e.stopPropagation()
     setSquadSlot(idx, null)
-    if (activeSlot === idx) setActiveSlot(null)
+    if (activeSlot === idx) { setActiveSlot(null); setPanelMode('idle') }
   }
+
+  function handleFormationChange(newFormation: string) {
+    if (newFormation === formation) return
+    const hasPlayers = squad.some(Boolean)
+    if (hasPlayers && !window.confirm('Зміна схеми скине склад. Продовжити?')) return
+    setFormation(newFormation)
+    setActiveSlot(null)
+    setPanelMode('idle')
+  }
+
+  const activePlayer = activeSlot !== null && panelMode === 'stats'
+    ? footballers.find(f => f.id === squad[activeSlot]) ?? null
+    : null
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Header */}
-      <div className="flex items-start justify-between gap-3 mb-6">
+      <div className="flex items-start justify-between gap-3 mb-4">
         <div>
           <div className="font-oswald text-xs tracking-[0.25em] text-[#00E676] uppercase mb-1">
-            · 4–3–3 ·
+            · {FORMATIONS[formation]?.label ?? formation} ·
           </div>
           <h1 className="font-oswald text-3xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
             Склад
@@ -160,8 +190,25 @@ export function Team() {
         <CoinDisplay />
       </div>
 
+      {/* Formation switcher */}
+      <div className="flex gap-1 mb-4 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1 overflow-x-auto">
+        {FORMATION_KEYS.map(key => (
+          <button
+            key={key}
+            onClick={() => handleFormationChange(key)}
+            className={`flex-1 min-w-fit py-1.5 px-2 rounded-lg font-oswald font-bold text-xs tracking-wider transition-all cursor-pointer whitespace-nowrap ${
+              formation === key
+                ? 'bg-[#00E676] text-[#04060A]'
+                : 'text-[#5A7090] hover:text-white'
+            }`}
+          >
+            {FORMATIONS[key].label}
+          </button>
+        ))}
+      </div>
+
       {/* Stats bar */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex gap-3 mb-4">
         <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
           <div className="font-oswald text-3xl font-bold text-[#00E676]">
             {teamOverall || '—'}
@@ -173,11 +220,11 @@ export function Team() {
         </div>
         <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
           <div className="font-oswald text-3xl font-bold text-[#FBBF24]">
-            {chemistry || '—'}
+            {bonusPct > 0 ? `+${bonusPct}%` : '—'}
           </div>
           <div>
             <div className="text-[10px] text-[#5A7090] uppercase tracking-wider">Хімія</div>
-            <div className="text-xs text-white font-semibold">зв'язки</div>
+            <div className="text-xs text-white font-semibold">бонус монет</div>
           </div>
         </div>
         <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 flex items-center gap-3">
@@ -190,6 +237,21 @@ export function Team() {
           </div>
         </div>
       </div>
+
+      {/* Active bonuses panel */}
+      {activeBonuses.length > 0 && (
+        <div className="mb-4 bg-[#0A0F1A] border border-[#FBBF24]/20 rounded-xl px-4 py-3">
+          <div className="text-[10px] text-[#5A7090] uppercase tracking-wider mb-2 font-oswald">Активні бонуси</div>
+          <div className="flex flex-wrap gap-2">
+            {activeBonuses.map((b, i) => (
+              <div key={i} className="flex items-center gap-1.5 bg-[#FBBF24]/10 border border-[#FBBF24]/20 rounded-lg px-2 py-1">
+                <span className="text-[10px] text-[#5A7090]">{b.label}</span>
+                <span className="text-[10px] font-oswald font-bold text-[#FBBF24]">+{b.percent}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
         {/* Pitch */}
@@ -262,39 +324,45 @@ export function Team() {
           </div>
         </div>
 
-        {/* Player picker panel */}
+        {/* Right panel */}
         <div className="w-full lg:w-1/2">
-          {activeSlot === null ? (
-            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-6 text-center">
-              <div className="text-3xl mb-3">⚽</div>
-              <div className="font-oswald text-lg font-bold text-white mb-1">Вибери позицію</div>
-              <div className="text-sm text-[#5A7090]">Натисни на будь-який слот на полі щоб вибрати гравця</div>
-
-              {filledPlayers.length > 0 && (
-                <div className="mt-6 space-y-2 text-left">
-                  <div className="text-xs text-[#5A7090] uppercase tracking-wider mb-3 font-oswald">Склад</div>
-                  {SLOTS.map((slot, idx) => {
-                    const id = squad[idx] ?? null
-                    const f = id ? footballers.find(p => p.id === id) ?? null : null
-                    if (!f) return null
-                    return (
-                      <div key={idx} className="flex items-center gap-3 bg-[#0D1520] rounded-xl px-3 py-2">
-                        <div className={`w-8 h-8 rounded-full ring-1 overflow-hidden bg-black/40 shrink-0 ${rarityRing[f.rarity]}`}>
-                          <PlayerPhoto footballer={f} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs font-bold text-white truncate">{f.name}</div>
-                          <div className="text-[10px] text-[#5A7090]">{f.club}</div>
-                        </div>
-                        <div className="font-oswald font-bold text-sm text-[#00E676]">{playerOverall(f)}</div>
-                        <div className="text-[10px] font-bold text-[#5A7090] font-oswald">{POS_UA[slot.pos]}</div>
-                      </div>
-                    )
-                  })}
+          {/* Stats overlay */}
+          {panelMode === 'stats' && activePlayer && (
+            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-5">
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-xs text-[#5A7090] uppercase tracking-wider">Гравець</div>
+                <button
+                  onClick={() => { setActiveSlot(null); setPanelMode('idle') }}
+                  className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
+                >×</button>
+              </div>
+              <div className="flex items-center gap-4 mb-5">
+                <div className={`w-16 h-16 rounded-full ring-2 overflow-hidden bg-black/40 shrink-0 ${rarityRing[activePlayer.rarity]}`}>
+                  <PlayerPhoto footballer={activePlayer} />
                 </div>
-              )}
+                <div>
+                  <div className="font-oswald font-bold text-white text-lg leading-tight">{activePlayer.name}</div>
+                  <div className="text-xs text-[#5A7090]">{activePlayer.club} · {activePlayer.nationality}</div>
+                  <div className="font-oswald font-bold text-[#00E676] text-xl mt-1">{playerOverall(activePlayer)}</div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <StatBar label="Швидкість" value={activePlayer.stats.pace} />
+                <StatBar label="Удар" value={activePlayer.stats.shooting} />
+                <StatBar label="Пас" value={activePlayer.stats.passing} />
+                <StatBar label="Дриблінг" value={activePlayer.stats.dribbling} />
+              </div>
+              <button
+                onClick={handleRemoveFromStats}
+                className="mt-4 w-full py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 transition-colors cursor-pointer"
+              >
+                Видалити зі складу
+              </button>
             </div>
-          ) : (
+          )}
+
+          {/* Player picker */}
+          {panelMode === 'pick' && activeSlot !== null && (
             <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-4">
               <div className="flex items-center justify-between mb-4">
                 <div>
@@ -305,7 +373,7 @@ export function Team() {
                   </div>
                 </div>
                 <button
-                  onClick={() => setActiveSlot(null)}
+                  onClick={() => { setActiveSlot(null); setPanelMode('idle') }}
                   className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
                 >×</button>
               </div>
@@ -340,6 +408,39 @@ export function Team() {
                         </div>
                         <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
                       </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Idle: squad summary */}
+          {panelMode === 'idle' && (
+            <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-6 text-center">
+              <div className="text-3xl mb-3">⚽</div>
+              <div className="font-oswald text-lg font-bold text-white mb-1">Вибери позицію</div>
+              <div className="text-sm text-[#5A7090]">Натисни на порожній слот щоб додати гравця, або на гравця щоб побачити статистику</div>
+
+              {filledPlayers.length > 0 && (
+                <div className="mt-6 space-y-2 text-left">
+                  <div className="text-xs text-[#5A7090] uppercase tracking-wider mb-3 font-oswald">Склад</div>
+                  {SLOTS.map((slot, idx) => {
+                    const id = squad[idx] ?? null
+                    const f = id ? footballers.find(p => p.id === id) ?? null : null
+                    if (!f) return null
+                    return (
+                      <div key={idx} className="flex items-center gap-3 bg-[#0D1520] rounded-xl px-3 py-2">
+                        <div className={`w-8 h-8 rounded-full ring-1 overflow-hidden bg-black/40 shrink-0 ${rarityRing[f.rarity]}`}>
+                          <PlayerPhoto footballer={f} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-bold text-white truncate">{f.name}</div>
+                          <div className="text-[10px] text-[#5A7090]">{f.club}</div>
+                        </div>
+                        <div className="font-oswald font-bold text-sm text-[#00E676]">{playerOverall(f)}</div>
+                        <div className="text-[10px] font-bold text-[#5A7090] font-oswald">{POS_UA[slot.pos]}</div>
+                      </div>
                     )
                   })}
                 </div>
