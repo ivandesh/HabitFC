@@ -86,17 +86,17 @@ export function Achievements() {
               className={`flex items-center gap-4 rounded-2xl border px-4 py-4 transition-all ${
                 unlocked
                   ? 'bg-[#0A1A12] border-[#00E676]/30'
-                  : 'bg-[#0A0F1A] border-[#1A2336] opacity-60'
+                  : 'bg-[#0A0F1A] border-[#1A2336]'
               }`}
             >
-              <div className={`text-3xl shrink-0 ${!unlocked ? 'grayscale opacity-40' : ''}`}>
+              <div className={`text-3xl shrink-0 ${!unlocked ? 'grayscale opacity-50' : ''}`}>
                 {a.icon}
               </div>
               <div className="flex-1 min-w-0">
-                <div className={`font-oswald font-bold text-sm ${unlocked ? 'text-white' : 'text-[#3A4A5A]'}`}>
+                <div className={`font-oswald font-bold text-sm ${unlocked ? 'text-white' : 'text-[#7A8A9A]'}`}>
                   {a.titleUA}
                 </div>
-                <div className="text-xs text-[#5A7090] mt-0.5">
+                <div className={`text-xs mt-0.5 ${unlocked ? 'text-[#5A7090]' : 'text-[#4A5A6A]'}`}>
                   {unlocked ? a.descUA : '???'}
                 </div>
                 {progress && !unlocked && (

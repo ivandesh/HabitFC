@@ -47,12 +47,12 @@ export const FORMATIONS: Record<string, FormationDef> = {
   '4-2-3-1': {
     label: '4–2–3–1',
     slots: [
-      { pos: 'GK',  x: 50, y: 86 },
-      { pos: 'DEF', x: 17, y: 70 }, { pos: 'DEF', x: 37, y: 70 },
-      { pos: 'DEF', x: 63, y: 70 }, { pos: 'DEF', x: 83, y: 70 },
-      { pos: 'MID', x: 35, y: 57 }, { pos: 'MID', x: 65, y: 57 },
-      { pos: 'MID', x: 18, y: 40 }, { pos: 'MID', x: 50, y: 38 }, { pos: 'MID', x: 82, y: 40 },
-      { pos: 'FWD', x: 50, y: 20 },
+      { pos: 'GK',  x: 50, y: 88 },
+      { pos: 'DEF', x: 17, y: 74 }, { pos: 'DEF', x: 37, y: 74 },
+      { pos: 'DEF', x: 63, y: 74 }, { pos: 'DEF', x: 83, y: 74 },
+      { pos: 'MID', x: 30, y: 60 }, { pos: 'MID', x: 70, y: 60 },
+      { pos: 'MID', x: 18, y: 43 }, { pos: 'MID', x: 50, y: 41 }, { pos: 'MID', x: 82, y: 43 },
+      { pos: 'FWD', x: 50, y: 22 },
     ],
   },
   '5-3-2': {

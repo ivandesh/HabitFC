@@ -155,12 +155,6 @@ export function Team() {
     setPanelMode('idle')
   }
 
-  function handleRemovePlayer(idx: number, e: React.MouseEvent) {
-    e.stopPropagation()
-    setSquadSlot(idx, null)
-    if (activeSlot === idx) { setActiveSlot(null); setPanelMode('idle') }
-  }
-
   function handleFormationChange(newFormation: string) {
     if (newFormation === formation) return
     const hasPlayers = squad.some(Boolean)
@@ -277,15 +271,11 @@ export function Team() {
                   onClick={() => handleSlotClick(idx)}
                 >
                   {footballer ? (
-                    <div className="flex flex-col items-center gap-0.5 group">
+                    <div className="flex flex-col items-center gap-0.5">
                       <div
                         className={`relative w-16 h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
                       >
                         <PlayerPhoto footballer={footballer} />
-                        <button
-                          onClick={(e) => handleRemovePlayer(idx, e)}
-                          className="absolute inset-0 bg-red-900/85 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-bold text-base cursor-pointer"
-                        >×</button>
                       </div>
                       <div className="text-[11px] text-white/85 font-bold leading-none max-w-[4.5rem] text-center truncate drop-shadow">
                         {footballer.name.split(' ').slice(-1)[0]}
