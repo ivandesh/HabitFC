@@ -179,6 +179,7 @@ export const useAppStore = create<AppStore>()(
     {
       name: 'habit-tracker-store',
       partialize: (state) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const { pendingUnlocks, ...rest } = state
         return rest
       },

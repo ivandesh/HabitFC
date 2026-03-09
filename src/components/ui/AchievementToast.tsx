@@ -7,32 +7,30 @@ import { playAchievementUnlock } from '../../lib/sounds'
 export function AchievementToastManager() {
   const drainPendingUnlock = useAppStore(state => state.drainPendingUnlock)
   const [current, setCurrent] = useState<{ id: string; titleUA: string; icon: string } | null>(null)
-  const [queue, setQueue] = useState<string[]>([])
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const currentRef = useRef<{ id: string; titleUA: string; icon: string } | null>(null)
 
-  // Drain store into local queue every 300ms
+  useEffect(() => {
+    currentRef.current = current
+  })
+
   useEffect(() => {
     const interval = setInterval(() => {
+      if (currentRef.current) return
       const id = drainPendingUnlock()
-      if (id) setQueue(q => [...q, id])
+      if (!id) return
+      const def = ACHIEVEMENTS.find(a => a.id === id)
+      if (!def) return
+      const toast = { id, titleUA: def.titleUA, icon: def.icon }
+      setCurrent(toast)
+      playAchievementUnlock()
+      timerRef.current = setTimeout(() => setCurrent(null), 4000)
     }, 300)
-    return () => clearInterval(interval)
-  }, [drainPendingUnlock])
-
-  // Show next from queue when idle
-  useEffect(() => {
-    if (current || queue.length === 0) return
-    const [next, ...rest] = queue
-    setQueue(rest)
-    const def = ACHIEVEMENTS.find(a => a.id === next)
-    if (!def) return
-    setCurrent({ id: next, titleUA: def.titleUA, icon: def.icon })
-    playAchievementUnlock()
-    timerRef.current = setTimeout(() => setCurrent(null), 4000)
     return () => {
+      clearInterval(interval)
       if (timerRef.current) clearTimeout(timerRef.current)
     }
-  }, [current, queue])
+  }, [drainPendingUnlock])
 
   return (
     <AnimatePresence>

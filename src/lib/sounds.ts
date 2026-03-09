@@ -63,7 +63,7 @@ export function playHabitComplete() {
     dg2.gain.linearRampToValueAtTime(0.13, t + 0.15)
     dg2.gain.exponentialRampToValueAtTime(0.001, t + 0.48)
     ding2.start(t + 0.14); ding2.stop(t + 0.52)
-  } catch (_) { /* audio blocked */ }
+  } catch { /* audio blocked */ }
 }
 
 // ─── Pack open: tension noise → bass thud → sparkle shower ───────────────────
@@ -126,7 +126,7 @@ export function playPackOpen() {
     ng2.gain.linearRampToValueAtTime(0.22, t + 0.43)
     ng2.gain.exponentialRampToValueAtTime(0.001, t + 0.65)
     ns2.start(t + 0.38); ns2.stop(t + 0.68)
-  } catch (_) { /* audio blocked */ }
+  } catch { /* audio blocked */ }
 }
 
 // ─── Card slide: soft airy swish ─────────────────────────────────────────────
@@ -146,7 +146,7 @@ export function playCardSlide() {
     g.gain.linearRampToValueAtTime(0.1, t + 0.015)
     g.gain.exponentialRampToValueAtTime(0.001, t + 0.13)
     swish.start(t); swish.stop(t + 0.15)
-  } catch (_) { /* audio blocked */ }
+  } catch { /* audio blocked */ }
 }
 
 // ─── Card flip reveal: rarity-dependent ──────────────────────────────────────
@@ -275,7 +275,7 @@ export function playCardFlip(rarity: 'common' | 'rare' | 'epic' | 'legendary' = 
         osc.start(s); osc.stop(s + 0.6)
       })
     }
-  } catch (_) { /* audio blocked */ }
+  } catch { /* audio blocked */ }
 }
 
 // ─── Achievement unlock: triumphant fanfare ───────────────────────────────────
@@ -329,5 +329,5 @@ export function playAchievementUnlock() {
       og.gain.exponentialRampToValueAtTime(0.001, s + 0.3)
       osc.start(s); osc.stop(s + 0.35)
     })
-  } catch (_) { /* audio blocked */ }
+  } catch { /* audio blocked */ }
 }
