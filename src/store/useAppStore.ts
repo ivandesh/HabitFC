@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { Habit, Footballer, AppState } from '../types'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
+import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import { checkAchievements } from '../lib/achievements'
 
 interface AppStore extends AppState {
@@ -65,7 +66,10 @@ export const useAppStore = create<AppStore>()(
 
           const newStreak = calculateNewStreak(habit.streak, habit.lastCompleted)
           const multiplier = streakMultiplier(newStreak)
-          const earned = Math.round(habit.coinValue * multiplier)
+          const baseCoin = Math.round(habit.coinValue * multiplier)
+          const bonuses = computeActiveBonuses(state)
+          const bonusPct = totalBonusPercent(bonuses)
+          const earned = Math.round(baseCoin * (1 + bonusPct / 100))
 
           return {
             coins: state.coins + earned,
