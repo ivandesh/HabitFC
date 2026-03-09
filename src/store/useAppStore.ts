@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware'
 import type { Habit, Footballer, AppState } from '../types'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
+import { checkAchievements } from '../lib/achievements'
 
 interface AppStore extends AppState {
   // Habit actions
@@ -76,6 +77,11 @@ export const useAppStore = create<AppStore>()(
             totalCompletions: state.totalCompletions + 1,
           }
         })
+        // Check achievements after state update
+        const newUnlocks = checkAchievements(get())
+        for (const achievementId of newUnlocks) {
+          get().unlockAchievement(achievementId)
+        }
       },
 
       buyPack: (cost, cards) => {
@@ -105,6 +111,11 @@ export const useAppStore = create<AppStore>()(
           pullHistory,
         })
 
+        const newUnlocks = checkAchievements(get())
+        for (const achievementId of newUnlocks) {
+          get().unlockAchievement(achievementId)
+        }
+
         return { refund, newCards }
       },
 
@@ -118,6 +129,10 @@ export const useAppStore = create<AppStore>()(
           squad[slotIndex] = footballerId
           return { squad }
         })
+        const newUnlocks = checkAchievements(get())
+        for (const achievementId of newUnlocks) {
+          get().unlockAchievement(achievementId)
+        }
       },
 
       resetAll: () => {
