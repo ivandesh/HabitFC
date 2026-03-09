@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom'
+import { AchievementToastManager } from './components/ui/AchievementToast'
 import { Dashboard } from './pages/Dashboard'
 import { Shop } from './pages/Shop'
 import { PackOpening } from './pages/PackOpening'
@@ -53,6 +54,7 @@ export default function App() {
   return (
     <BrowserRouter basename="/HabitFC">
       <div className="min-h-screen bg-[#04060A] stadium-lines">
+        <AchievementToastManager />
         <NavBar />
         <Routes>
           <Route path="/" element={<Dashboard />} />
