@@ -40,6 +40,8 @@ export const useAppStore = create<AppStore>()(
       formation: '4-3-3',
       pendingUnlocks: [],
       pityCounters: {},
+      coachCollection: {},
+      assignedCoach: null,
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -162,6 +164,8 @@ export const useAppStore = create<AppStore>()(
           formation: '4-3-3',
           pendingUnlocks: [],
           pityCounters: {},
+          coachCollection: {},
+          assignedCoach: null,
         })
       },
 
