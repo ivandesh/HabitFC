@@ -8,6 +8,7 @@ import { CoachCard } from '../components/cards/CoachCard'
 import { CoinIcon } from '../components/ui/CoinIcon'
 import { playPackOpen, playCardSlide, playCardFlip } from '../lib/sounds'
 import { duplicateRefund } from '../lib/gacha'
+import { coachPack } from '../data/coachPack'
 
 type LocationState =
   | { type: 'footballer'; pack: Pack; cards: Footballer[]; nextPityCounter: number }
@@ -358,7 +359,7 @@ function CoachPackOpening({ coach }: { coach: Coach }) {
     setPhase('opening')
     playPackOpen()
     setTimeout(() => {
-      const res = buyCoachPack(coach.id, 350)
+      const res = buyCoachPack(coach.id, coachPack.cost)
       setResult(res)
       for (const id of res.newUnlockIds) pushPendingUnlock(id)
       setTimeout(() => setPhase('revealed'), 300)
@@ -401,7 +402,7 @@ function CoachPackOpening({ coach }: { coach: Coach }) {
             {phase === 'confirm' && (
               <div className="flex flex-col items-center gap-4">
                 <p className="text-gray-400 text-sm flex items-center gap-2">
-                  1 тренер за <span className="font-bold text-[#FBBF24] flex items-center gap-1"><CoinIcon size={16} />350</span>
+                  1 тренер за <span className="font-bold text-[#FBBF24] flex items-center gap-1"><CoinIcon size={16} />{coachPack.cost}</span>
                 </p>
                 <div className="flex gap-3">
                   <button onClick={() => navigate('/shop')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer text-sm">
