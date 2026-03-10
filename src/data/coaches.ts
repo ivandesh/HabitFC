@@ -278,14 +278,13 @@ export const coaches: Coach[] = [
     photoUrl: '/coaches/pochettino.jpg',
     emoji: '📐',
     perk: {
-      type: 'stat_boost',
-      stat: 'pace',
-      position: 'DEF',
-      values: [5, 8, 12],
+      type: 'active_habits_flat',
+      minHabits: 4,
+      values: [6, 10, 18],
       descUA: [
-        '+5 до швидкості для всіх ЗАХ',
-        '+8 до швидкості для всіх ЗАХ',
-        '+12 до швидкості для всіх ЗАХ',
+        '+6 монет за звичку якщо маєш 4+ звички',
+        '+10 монет за звичку якщо маєш 4+ звички',
+        '+18 монет за звичку якщо маєш 4+ звички',
       ],
     },
   },
@@ -328,7 +327,7 @@ export const coaches: Coach[] = [
     id: 'deschamps',
     name: 'Didier Deschamps',
     nationality: 'France',
-    clubs: ['Monaco'],
+    clubs: ['France', 'Monaco'],
     photoUrl: '/coaches/deschamps.png',
     emoji: '🇫🇷',
     perk: {
@@ -346,7 +345,7 @@ export const coaches: Coach[] = [
     id: 'southgate',
     name: 'Gareth Southgate',
     nationality: 'England',
-    clubs: [],
+    clubs: ['England'],
     photoUrl: '/coaches/southgate.png',
     emoji: '🏴󠁧󠁢󠁥󠁮󠁧󠁿',
     perk: {

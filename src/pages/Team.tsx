@@ -136,10 +136,8 @@ export function Team() {
 
   const coachLevel = assignedCoach ? getCoachLevel(assignedCoach, coachCollection) : 0
 
-  const appState = useAppStore(state => state)
-
   function boostedFootballer(f: Footballer) {
-    return applyCoachStatBoost(f, appState)
+    return applyCoachStatBoost(f, { assignedCoach, coachCollection } as AppState)
   }
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
@@ -314,7 +312,7 @@ export function Team() {
             <div className="flex-1 min-w-0">
               <div className="font-oswald font-bold text-white text-sm truncate">{assignedCoachObj.name}</div>
               <div className="text-[10px] text-[#FBBF24]/70 truncate">
-                {assignedCoachObj.perk.descUA[coachLevel - 1]}
+                {assignedCoachObj.perk.descUA[Math.max(0, coachLevel - 1)]}
               </div>
             </div>
             <div className="flex flex-col items-end gap-1 shrink-0">

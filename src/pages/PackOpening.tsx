@@ -342,7 +342,7 @@ function normalizeState(raw: unknown): LocationState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
   if (s.type === 'coach' && s.coach) return s as LocationState
-  if (s.pack && s.cards) return { type: 'footballer', ...(s as object) } as LocationState
+  if (s.pack && s.cards) return { type: 'footballer', nextPityCounter: 0, ...(s as object) } as LocationState
   return null
 }
 
@@ -351,11 +351,13 @@ function CoachPackOpening({ coach }: { coach: Coach }) {
   const navigate = useNavigate()
   const buyCoachPack = useAppStore(state => state.buyCoachPack)
   const pushPendingUnlock = useAppStore(state => state.pushPendingUnlock)
+  const coins = useAppStore(state => state.coins)
 
   const [phase, setPhase] = useState<'confirm' | 'opening' | 'revealed'>('confirm')
   const [result, setResult] = useState<{ isLevelUp: boolean; newLevel: number; refundCoins: number } | null>(null)
 
   function handleOpen() {
+    if (coins < coachPack.cost) { navigate('/shop'); return }
     setPhase('opening')
     playPackOpen()
     setTimeout(() => {
@@ -430,7 +432,7 @@ function CoachPackOpening({ coach }: { coach: Coach }) {
           >
             <div className="text-center">
               <div className="font-oswald text-xs tracking-[0.25em] text-[#FBBF24] uppercase mb-1">
-                {result.isLevelUp ? '· Підвищення рівня! ·' : '· Новий тренер! ·'}
+                {result.refundCoins > 0 ? '· Дублікат! ·' : result.isLevelUp ? '· Підвищення рівня! ·' : '· Новий тренер! ·'}
               </div>
               <h1 className="font-oswald text-3xl font-bold uppercase tracking-wide text-white">
                 {coach.name}
