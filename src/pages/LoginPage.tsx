@@ -28,6 +28,8 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [showMigration, setShowMigration] = useState(false)
   const [pendingUserId, setPendingUserId] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
 
   const { signIn, signUp } = useAuthStore()
   const importState = useAppStore(s => s.importState)
@@ -136,23 +138,35 @@ export function LoginPage() {
             required
             className="w-full px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl text-[#E8F0FF] placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
           />
-          <input
-            type="password"
-            placeholder="Пароль"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-            className="w-full px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl text-[#E8F0FF] placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
-          />
-          {tab === 'register' && (
+          <div className="relative">
             <input
-              type="password"
-              placeholder="Підтвердіть пароль"
-              value={confirm}
-              onChange={e => setConfirm(e.target.value)}
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Пароль"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
               required
-              className="w-full px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl text-[#E8F0FF] placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
+              className="w-full px-4 py-3 pr-11 bg-[#0A0F1A] border border-[#1A2336] rounded-xl text-[#E8F0FF] placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
             />
+            <button type="button" onClick={() => setShowPassword(v => !v)}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A7090] hover:text-[#E8F0FF] transition-colors cursor-pointer">
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
+          {tab === 'register' && (
+            <div className="relative">
+              <input
+                type={showConfirm ? 'text' : 'password'}
+                placeholder="Підтвердіть пароль"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                required
+                className="w-full px-4 py-3 pr-11 bg-[#0A0F1A] border border-[#1A2336] rounded-xl text-[#E8F0FF] placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
+              />
+              <button type="button" onClick={() => setShowConfirm(v => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#5A7090] hover:text-[#E8F0FF] transition-colors cursor-pointer">
+                {showConfirm ? '🙈' : '👁️'}
+              </button>
+            </div>
           )}
 
           {error && <p className="text-red-400 text-sm text-center">{error}</p>}
