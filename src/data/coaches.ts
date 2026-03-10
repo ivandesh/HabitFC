@@ -258,7 +258,7 @@ export const coaches: Coach[] = [
     name: 'Unai Emery',
     nationality: 'Spain',
     clubs: ['Sevilla', 'Paris SG', 'Arsenal', 'Villarreal', 'Aston Villa'],
-    photoUrl: '/coaches/emery.png',
+    photoUrl: '/coaches/emery.jpg',
     emoji: '🗺️',
     perk: {
       type: 'all_done_flat',
@@ -275,7 +275,7 @@ export const coaches: Coach[] = [
     name: 'Mauricio Pochettino',
     nationality: 'Argentina',
     clubs: ['Tottenham', 'Paris SG', 'Chelsea'],
-    photoUrl: '/coaches/pochettino.png',
+    photoUrl: '/coaches/pochettino.jpg',
     emoji: '📐',
     perk: {
       type: 'stat_boost',
