@@ -5,6 +5,7 @@ import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from
 import { duplicateRefund } from '../lib/gacha'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import { checkAchievements } from '../lib/achievements'
+import { computeCoachHabitBonus } from '../lib/coachPerks'
 
 interface AppStore extends AppState {
   // Habit actions
@@ -19,6 +20,9 @@ interface AppStore extends AppState {
   addCoins: (amount: number) => void
   // Squad
   setSquadSlot: (slotIndex: number, footballerId: string | null) => void
+  // Coach
+  assignCoach: (coachId: string | null) => void
+  buyCoachPack: (coachId: string, cost: number) => { isLevelUp: boolean; newLevel: number; refundCoins: number; newUnlockIds: string[] }
   // Reset
   resetAll: () => void
   // Achievements
@@ -74,9 +78,11 @@ export const useAppStore = create<AppStore>()(
           const bonuses = computeActiveBonuses(state)
           const bonusPct = totalBonusPercent(bonuses)
           const earned = Math.round(baseCoin * (1 + bonusPct / 100))
+          const coachBonus = computeCoachHabitBonus(state, id, earned, newStreak)
+          const total = earned + coachBonus
 
           return {
-            coins: state.coins + earned,
+            coins: state.coins + total,
             habits: state.habits.map(h =>
               h.id === id
                 ? { ...h, streak: newStreak, lastCompleted: getToday() }
@@ -134,6 +140,42 @@ export const useAppStore = create<AppStore>()(
         }
 
         return { refund, newCards, newUnlockIds }
+      },
+
+      assignCoach: (coachId) => {
+        set({ assignedCoach: coachId })
+        const newUnlocks = checkAchievements(get())
+        for (const achievementId of newUnlocks) {
+          get().unlockAchievement(achievementId)
+        }
+      },
+
+      buyCoachPack: (coachId, cost) => {
+        const state = get()
+        const current = state.coachCollection[coachId] ?? 0
+        const newCount = current + 1
+        const newLevel = Math.min(newCount, 3)
+        const isLevelUp = current > 0 && newLevel <= 3
+        const alreadyMaxed = current >= 3
+        const refundCoins = alreadyMaxed ? 50 : 0
+
+        set({
+          coins: state.coins - cost + refundCoins,
+          coachCollection: { ...state.coachCollection, [coachId]: newCount },
+        })
+
+        const newUnlockIds = checkAchievements(get())
+        if (newUnlockIds.length > 0) {
+          const unlockedAt = new Date().toISOString()
+          set(s => ({
+            achievements: Object.fromEntries([
+              ...Object.entries(s.achievements),
+              ...newUnlockIds.map(id => [id, { unlockedAt }]),
+            ]),
+          }))
+        }
+
+        return { isLevelUp, newLevel, refundCoins, newUnlockIds }
       },
 
       addCoins: (amount) => {
