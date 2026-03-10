@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
 import type { Habit, Footballer, AppState } from '../types'
+import { scheduleSave, flushSave } from '../lib/stateSync'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
@@ -34,9 +34,7 @@ interface AppStore extends AppState {
   setFormation: (formation: string) => void
 }
 
-export const useAppStore = create<AppStore>()(
-  persist(
-    (set, get) => ({
+export const useAppStore = create<AppStore>()((set, get) => ({
       coins: 200,
       habits: [],
       collection: {},
@@ -263,14 +261,19 @@ export const useAppStore = create<AppStore>()(
       setFormation: (formation) => {
         set({ formation, squad: Array(11).fill(null) })
       },
-    }),
-    {
-      name: 'habit-tracker-store',
-      partialize: (state) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { pendingUnlocks, ...rest } = state
-        return rest
-      },
-    }
-  )
-)
+}))
+
+export function syncSubscribe(userId: string): () => void {
+  const unsubscribe = useAppStore.subscribe((state) => {
+    scheduleSave(userId, state)
+  })
+
+  // Note: flushSave fires synchronously but saveState is async.
+  // Browsers cannot await Promises in beforeunload — this is best-effort.
+  window.addEventListener('beforeunload', flushSave)
+
+  return () => {
+    unsubscribe()
+    window.removeEventListener('beforeunload', flushSave)
+  }
+}

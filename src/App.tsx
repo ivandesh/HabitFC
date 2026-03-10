@@ -6,7 +6,10 @@ import { PackOpening } from './pages/PackOpening'
 import { Collection } from './pages/Collection'
 import { Team } from './pages/Team'
 import { Achievements } from './pages/Achievements'
+import { LoginPage } from './pages/LoginPage'
+import { AuthGuard } from './components/AuthGuard'
 import { useAppStore } from './store/useAppStore'
+import { useAuthStore } from './store/useAuthStore'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -37,6 +40,7 @@ const TrophyIcon = () => (
 function NavBar() {
   const resetAll = useAppStore(state => state.resetAll)
   const importState = useAppStore(state => state.importState)
+  const { signOut } = useAuthStore()
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
@@ -128,6 +132,13 @@ function NavBar() {
           >
             🔄
           </button>
+          <button
+            onClick={() => signOut()}
+            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+            title="Вийти з акаунту"
+          >
+            🚪
+          </button>
         </div>
       </div>
 
@@ -165,6 +176,13 @@ function NavBar() {
             title="Скинути прогрес"
           >
             🔄
+          </button>
+          <button
+            onClick={() => signOut()}
+            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+            title="Вийти з акаунту"
+          >
+            🚪
           </button>
         </div>
       </div>
@@ -213,22 +231,29 @@ function BottomNav() {
 export default function App() {
   return (
     <BrowserRouter basename="/HabitFC">
-      <div className="min-h-screen bg-[#04060A] stadium-lines">
-        <AchievementToastManager />
-        <NavBar />
-        {/* pb-14 offsets the fixed bottom nav on mobile */}
-        <div className="pb-14 sm:pb-0">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/open" element={<PackOpening />} />
-            <Route path="/collection" element={<Collection />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/achievements" element={<Achievements />} />
-          </Routes>
-        </div>
-        <BottomNav />
-      </div>
+      <Routes>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/*" element={
+          <AuthGuard>
+            <div className="min-h-screen bg-[#04060A] stadium-lines">
+              <AchievementToastManager />
+              <NavBar />
+              {/* pb-14 offsets the fixed bottom nav on mobile */}
+              <div className="pb-14 sm:pb-0">
+                <Routes>
+                  <Route path="/" element={<Dashboard />} />
+                  <Route path="/shop" element={<Shop />} />
+                  <Route path="/open" element={<PackOpening />} />
+                  <Route path="/collection" element={<Collection />} />
+                  <Route path="/team" element={<Team />} />
+                  <Route path="/achievements" element={<Achievements />} />
+                </Routes>
+              </div>
+              <BottomNav />
+            </div>
+          </AuthGuard>
+        } />
+      </Routes>
     </BrowserRouter>
   )
 }
