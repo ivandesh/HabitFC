@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { HabitCard } from './HabitCard'
 import { AddHabitModal } from './AddHabitModal'
+import { EditHabitModal } from './EditHabitModal'
+import type { Habit } from '../../types'
 import {
   DndContext,
   closestCenter,
@@ -20,6 +22,7 @@ export function HabitList() {
   const habits = useAppStore(state => state.habits)
   const reorderHabits = useAppStore(state => state.reorderHabits)
   const [showModal, setShowModal] = useState(false)
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
@@ -63,13 +66,14 @@ export function HabitList() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={habits.map(h => h.id)} strategy={rectSortingStrategy}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {habits.map(h => <HabitCard key={h.id} habit={h} />)}
+              {habits.map(h => <HabitCard key={h.id} habit={h} onEdit={setEditingHabit} />)}
             </div>
           </SortableContext>
         </DndContext>
       )}
 
       {showModal && <AddHabitModal onClose={() => setShowModal(false)} />}
+      {editingHabit && <EditHabitModal habit={editingHabit} onClose={() => setEditingHabit(null)} />}
     </div>
   )
 }

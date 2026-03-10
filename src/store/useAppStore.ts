@@ -10,6 +10,7 @@ import { computeCoachHabitBonus } from '../lib/coachPerks'
 interface AppStore extends AppState {
   // Habit actions
   addHabit: (habit: Omit<Habit, 'id' | 'streak' | 'lastCompleted'>) => void
+  updateHabit: (id: string, patch: Pick<Habit, 'name' | 'icon' | 'coinValue'>) => void
   removeHabit: (id: string) => void
   reorderHabits: (ids: string[]) => void
   completeHabit: (id: string) => void
@@ -57,6 +58,12 @@ export const useAppStore = create<AppStore>()(
           ...habitData,
         }
         set(state => ({ habits: [...state.habits, habit] }))
+      },
+
+      updateHabit: (id, patch) => {
+        set(state => ({
+          habits: state.habits.map(h => h.id === id ? { ...h, ...patch } : h),
+        }))
       },
 
       removeHabit: (id) => {

@@ -9,9 +9,10 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface Props {
   habit: Habit
+  onEdit: (habit: Habit) => void
 }
 
-export function HabitCard({ habit }: Props) {
+export function HabitCard({ habit, onEdit }: Props) {
   const completeHabit = useAppStore(state => state.completeHabit)
   const removeHabit = useAppStore(state => state.removeHabit)
   const done = isCompletedToday(habit.lastCompleted)
@@ -37,7 +38,7 @@ export function HabitCard({ habit }: Props) {
           : 'border-[#1A2336] bg-[#0A0F1A] hover:border-[#2A3A50]'
       }`}
     >
-      {/* Top bar: drag handle + delete */}
+      {/* Top bar: drag handle + edit + delete */}
       <div className="flex items-center justify-between px-3 pt-3">
         <div
           {...attributes}
@@ -47,13 +48,22 @@ export function HabitCard({ habit }: Props) {
         >
           ⠿
         </div>
-        <button
-          onClick={() => removeHabit(habit.id)}
-          className="p-1 text-[#2A3A50] hover:text-red-400 transition-colors cursor-pointer"
-          title="Видалити звичку"
-        >
-          🗑️
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => onEdit(habit)}
+            className="p-1 text-[#2A3A50] hover:text-blue-400 transition-colors cursor-pointer"
+            title="Редагувати звичку"
+          >
+            ✏️
+          </button>
+          <button
+            onClick={() => removeHabit(habit.id)}
+            className="p-1 text-[#2A3A50] hover:text-red-400 transition-colors cursor-pointer"
+            title="Видалити звичку"
+          >
+            🗑️
+          </button>
+        </div>
       </div>
 
       {/* Icon + title */}
