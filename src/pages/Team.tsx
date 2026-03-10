@@ -556,59 +556,65 @@ export function Team() {
         </div>
       </div>
 
-      {/* Coach picker bottom sheet */}
+      {/* Coach picker — bottom sheet on mobile, centered modal on desktop */}
       {coachPickerOpen && (
-        <div
-          className="fixed left-0 right-0 z-50 bg-[#0A0F1A] border border-b-0 border-[#FBBF24]/20 rounded-t-2xl overflow-hidden"
-          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
-            <div className="w-8 h-1 bg-[#2A3A50] rounded-full" />
-          </div>
-          <div className="max-h-[60vh] overflow-y-auto p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="font-oswald text-lg font-bold text-white">Вибери тренера</div>
-              <button onClick={() => setCoachPickerOpen(false)} className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg text-xl cursor-pointer">×</button>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pb-14 sm:pb-0">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setCoachPickerOpen(false)}
+          />
+          {/* Panel */}
+          <div className="relative w-full sm:max-w-2xl sm:mx-4 bg-[#0A0F1A] border border-[#FBBF24]/20 rounded-t-2xl sm:rounded-2xl overflow-hidden">
+            {/* Drag handle — mobile only */}
+            <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
+              <div className="w-8 h-1 bg-[#2A3A50] rounded-full" />
             </div>
+            <div className="max-h-[60vh] sm:max-h-[80vh] overflow-y-auto p-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="font-oswald text-lg font-bold text-white">Вибери тренера</div>
+                <button onClick={() => setCoachPickerOpen(false)} className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg text-xl cursor-pointer">×</button>
+              </div>
 
-            {assignedCoach && (
-              <button
-                onClick={() => { assignCoach(null); setCoachPickerOpen(false) }}
-                className="w-full mb-3 py-2 border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
-              >
-                Зняти тренера
-              </button>
-            )}
+              {assignedCoach && (
+                <button
+                  onClick={() => { assignCoach(null); setCoachPickerOpen(false) }}
+                  className="w-full mb-3 py-2 border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+                >
+                  Зняти тренера
+                </button>
+              )}
 
-            {(() => {
-              const ownedCoaches = allCoaches.filter(c => (coachCollection[c.id] ?? 0) > 0)
-              if (ownedCoaches.length === 0) {
+              {(() => {
+                const ownedCoaches = allCoaches.filter(c => (coachCollection[c.id] ?? 0) > 0)
+                if (ownedCoaches.length === 0) {
+                  return (
+                    <div className="text-center py-8 text-[#5A7090]">
+                      <div className="text-4xl mb-3">📋</div>
+                      <div className="font-oswald text-sm text-white">Немає тренерів</div>
+                      <div className="text-xs mt-1">Купи Тренерський Пакет у магазині</div>
+                    </div>
+                  )
+                }
                 return (
-                  <div className="text-center py-8 text-[#5A7090]">
-                    <div className="text-4xl mb-3">📋</div>
-                    <div className="font-oswald text-sm text-white">Немає тренерів</div>
-                    <div className="text-xs mt-1">Купи Тренерський Пакет у магазині</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {ownedCoaches.map(c => {
+                      const lvl = getCoachLevel(c.id, coachCollection)
+                      const isActive = assignedCoach === c.id
+                      return (
+                        <button
+                          key={c.id}
+                          onClick={() => { assignCoach(c.id); setCoachPickerOpen(false) }}
+                          className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
+                        >
+                          <CoachCard coach={c} level={lvl} mini={false} showPerk />
+                        </button>
+                      )
+                    })}
                   </div>
                 )
-              }
-              return (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {ownedCoaches.map(c => {
-                    const lvl = getCoachLevel(c.id, coachCollection)
-                    const isActive = assignedCoach === c.id
-                    return (
-                      <button
-                        key={c.id}
-                        onClick={() => { assignCoach(c.id); setCoachPickerOpen(false) }}
-                        className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
-                      >
-                        <CoachCard coach={c} level={lvl} mini={false} showPerk />
-                      </button>
-                    )
-                  })}
-                </div>
-              )
-            })()}
+              })()}
+            </div>
           </div>
         </div>
       )}

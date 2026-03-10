@@ -36,6 +36,7 @@ const TrophyIcon = () => (
 
 function NavBar() {
   const resetAll = useAppStore(state => state.resetAll)
+  const importState = useAppStore(state => state.importState)
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
@@ -50,21 +51,84 @@ function NavBar() {
     }
   }
 
+  function handleExport() {
+    const state = useAppStore.getState()
+    const data = {
+      coins: state.coins,
+      habits: state.habits,
+      collection: state.collection,
+      pullHistory: state.pullHistory,
+      squad: state.squad,
+      achievements: state.achievements,
+      totalCompletions: state.totalCompletions,
+      formation: state.formation,
+      pityCounters: state.pityCounters,
+      coachCollection: state.coachCollection,
+      assignedCoach: state.assignedCoach,
+    }
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `habitfc-backup-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function handleImport() {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json,application/json'
+    input.onchange = () => {
+      const file = input.files?.[0]
+      if (!file) return
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        try {
+          const data = JSON.parse(e.target?.result as string)
+          if (window.confirm('Замінити поточні дані імпортованими? Поточний прогрес буде втрачено.')) {
+            importState(data)
+          }
+        } catch {
+          alert('Помилка: невалідний файл резервної копії.')
+        }
+      }
+      reader.readAsText(file)
+    }
+    input.click()
+  }
+
   return (
     <nav className="sticky top-0 z-40 bg-[#04060A]/95 backdrop-blur-md border-b border-[#1A2336]">
-      {/* Mobile: minimal top bar — just logo + reset */}
+      {/* Mobile: minimal top bar — logo + data buttons + reset */}
       <div className="sm:hidden px-4 flex items-center justify-between h-12">
         <span className="font-oswald text-lg font-bold tracking-wider">
           <span className="text-[#00E676]">⚽</span>{' '}
           <span className="text-white">HABIT<span className="text-[#00E676]">FC</span></span>
         </span>
-        <button
-          onClick={handleReset}
-          className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
-          title="Скинути прогрес"
-        >
-          🔄
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={handleExport}
+            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+            title="Експорт даних"
+          >
+            ⬇️
+          </button>
+          <button
+            onClick={handleImport}
+            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+            title="Імпорт даних"
+          >
+            ⬆️
+          </button>
+          <button
+            onClick={handleReset}
+            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+            title="Скинути прогрес"
+          >
+            🔄
+          </button>
+        </div>
       </div>
 
       {/* Desktop: full nav bar */}
@@ -80,7 +144,21 @@ function NavBar() {
         <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
         <NavLink to="/team" className={linkClass}>Склад</NavLink>
         <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
-        <div className="ml-auto shrink-0">
+        <div className="ml-auto flex items-center gap-1 shrink-0">
+          <button
+            onClick={handleExport}
+            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+            title="Експорт даних"
+          >
+            ⬇️
+          </button>
+          <button
+            onClick={handleImport}
+            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+            title="Імпорт даних"
+          >
+            ⬆️
+          </button>
           <button
             onClick={handleReset}
             className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"

@@ -19,9 +19,11 @@ export function Achievements() {
   const totalCompletions = useAppStore(state => state.totalCompletions)
   const collection = useAppStore(state => state.collection)
   const squad = useAppStore(state => state.squad)
+  const coachCollection = useAppStore(state => state.coachCollection)
+  const assignedCoach = useAppStore(state => state.assignedCoach)
   const progressState = useMemo(
-    () => ({ achievements, totalCompletions, collection, squad } as AppState),
-    [achievements, totalCompletions, collection, squad]
+    () => ({ achievements, totalCompletions, collection, squad, coachCollection, assignedCoach } as AppState),
+    [achievements, totalCompletions, collection, squad, coachCollection, assignedCoach]
   )
   const [tab, setTab] = useState<Category>('all')
 

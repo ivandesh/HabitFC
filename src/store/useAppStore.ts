@@ -25,6 +25,8 @@ interface AppStore extends AppState {
   buyCoachPack: (coachId: string, cost: number) => { isLevelUp: boolean; newLevel: number; refundCoins: number; newUnlockIds: string[] }
   // Reset
   resetAll: () => void
+  // Import/Export
+  importState: (data: Partial<AppState>) => void
   // Achievements
   unlockAchievement: (id: string) => void
   drainPendingUnlock: () => string | undefined
@@ -208,6 +210,23 @@ export const useAppStore = create<AppStore>()(
           pityCounters: {},
           coachCollection: {},
           assignedCoach: null,
+        })
+      },
+
+      importState: (data) => {
+        set({
+          coins: data.coins ?? 200,
+          habits: data.habits ?? [],
+          collection: data.collection ?? {},
+          pullHistory: data.pullHistory ?? [],
+          squad: data.squad ?? Array(11).fill(null),
+          achievements: data.achievements ?? {},
+          totalCompletions: data.totalCompletions ?? 0,
+          formation: data.formation ?? '4-3-3',
+          pendingUnlocks: [],
+          pityCounters: data.pityCounters ?? {},
+          coachCollection: data.coachCollection ?? {},
+          assignedCoach: data.assignedCoach ?? null,
         })
       },
 
