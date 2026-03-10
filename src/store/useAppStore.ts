@@ -155,13 +155,13 @@ export const useAppStore = create<AppStore>()(
         const current = state.coachCollection[coachId] ?? 0
         const newCount = current + 1
         const newLevel = Math.min(newCount, 3)
-        const isLevelUp = current > 0 && newLevel <= 3
+        const isLevelUp = current > 0 && newLevel > current
         const alreadyMaxed = current >= 3
         const refundCoins = alreadyMaxed ? 50 : 0
 
         set({
           coins: state.coins - cost + refundCoins,
-          coachCollection: { ...state.coachCollection, [coachId]: newCount },
+          coachCollection: { ...state.coachCollection, [coachId]: Math.min(newCount, 3) },
         })
 
         const newUnlockIds = checkAchievements(get())
