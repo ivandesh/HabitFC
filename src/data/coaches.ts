@@ -24,7 +24,7 @@ export const coaches: Coach[] = [
     id: 'klopp',
     name: 'Jürgen Klopp',
     nationality: 'Germany',
-    clubs: ['Dortmund', 'Liverpool'],
+    clubs: ['Borussia Dortmund', 'Liverpool'],
     photoUrl: '/coaches/klopp.png',
     emoji: '😁',
     perk: {
@@ -77,7 +77,7 @@ export const coaches: Coach[] = [
     id: 'mourinho',
     name: 'José Mourinho',
     nationality: 'Portugal',
-    clubs: ['Porto', 'Chelsea', 'Inter Milan', 'Real Madrid', 'Man United', 'Tottenham', 'Roma'],
+    clubs: ['Porto', 'Chelsea', 'Inter Milan', 'Real Madrid', 'Man United', 'Tottenham', 'AS Roma'],
     photoUrl: '/coaches/mourinho.png',
     emoji: '😏',
     perk: {
@@ -131,7 +131,7 @@ export const coaches: Coach[] = [
     id: 'tuchel',
     name: 'Thomas Tuchel',
     nationality: 'Germany',
-    clubs: ['Dortmund', 'Paris SG', 'Chelsea', 'Bayern Munich'],
+    clubs: ['Borussia Dortmund', 'Paris SG', 'Chelsea', 'Bayern Munich'],
     photoUrl: '/coaches/tuchel.png',
     emoji: '🤔',
     perk: {
