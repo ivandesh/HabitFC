@@ -111,7 +111,7 @@ function NavBar() {
           <span className="text-white">HABIT<span className="text-[#00E676]">FC</span></span>
         </span>
         <div className="flex items-center gap-1">
-          <button
+          {/* <button
             onClick={handleExport}
             className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
             title="Експорт даних"
@@ -131,7 +131,7 @@ function NavBar() {
             title="Скинути прогрес"
           >
             🔄
-          </button>
+          </button> */}
           <button
             onClick={() => signOut()}
             className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
