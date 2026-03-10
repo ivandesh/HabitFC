@@ -1,18 +1,17 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence, LayoutGroup } from 'framer-motion'
-import type { Footballer, Pack } from '../types'
+import type { Footballer, Pack, Coach } from '../types'
 import { useAppStore } from '../store/useAppStore'
 import { FootballerCard } from '../components/cards/FootballerCard'
+import { CoachCard } from '../components/cards/CoachCard'
 import { CoinIcon } from '../components/ui/CoinIcon'
 import { playPackOpen, playCardSlide, playCardFlip } from '../lib/sounds'
 import { duplicateRefund } from '../lib/gacha'
 
-interface LocationState {
-  pack: Pack
-  cards: Footballer[]
-  nextPityCounter: number
-}
+type LocationState =
+  | { type: 'footballer'; pack: Pack; cards: Footballer[]; nextPityCounter: number }
+  | { type: 'coach'; coach: Coach }
 
 type Phase = 'confirm' | 'opening' | 'revealing' | 'done'
 
@@ -338,6 +337,135 @@ function Deck({ pack, remaining, nextIndex, onDeal }: {
   )
 }
 
+function normalizeState(raw: unknown): LocationState | null {
+  if (!raw || typeof raw !== 'object') return null
+  const s = raw as Record<string, unknown>
+  if (s.type === 'coach' && s.coach) return s as LocationState
+  if (s.pack && s.cards) return { type: 'footballer', ...(s as object) } as LocationState
+  return null
+}
+
+// ─── Coach pack opening component ────────────────────────────────────────────
+function CoachPackOpening({ coach }: { coach: Coach }) {
+  const navigate = useNavigate()
+  const buyCoachPack = useAppStore(state => state.buyCoachPack)
+  const pushPendingUnlock = useAppStore(state => state.pushPendingUnlock)
+
+  const [phase, setPhase] = useState<'confirm' | 'opening' | 'revealed'>('confirm')
+  const [result, setResult] = useState<{ isLevelUp: boolean; newLevel: number; refundCoins: number } | null>(null)
+
+  function handleOpen() {
+    setPhase('opening')
+    playPackOpen()
+    setTimeout(() => {
+      const res = buyCoachPack(coach.id, 350)
+      setResult(res)
+      for (const id of res.newUnlockIds) pushPendingUnlock(id)
+      setTimeout(() => setPhase('revealed'), 300)
+    }, 1000)
+  }
+
+  return (
+    <div className="flex flex-col items-center min-h-screen px-4 py-10 gap-6">
+      <AnimatePresence mode="wait">
+        {phase !== 'revealed' && (
+          <motion.div
+            key="confirm"
+            className="flex flex-col items-center gap-6"
+            exit={{ scale: 1.4, opacity: 0, y: -60, transition: { duration: 0.4 } }}
+          >
+            {/* Coach pack visual */}
+            <motion.div
+              animate={
+                phase === 'opening'
+                  ? { x: [0, -14, 14, -10, 10, -6, 6, 0], transition: { duration: 0.55 } }
+                  : { y: [0, -8, 0], transition: { duration: 2.8, repeat: Infinity, ease: 'easeInOut' } }
+              }
+            >
+              <div
+                className="w-44 min-h-[17rem] rounded-2xl border-2 flex flex-col items-center justify-center gap-4 relative overflow-hidden"
+                style={{
+                  borderColor: '#FBBF24',
+                  background: 'linear-gradient(155deg, #1a1200 0%, #0D0900 60%, #050300 100%)',
+                  boxShadow: '0 0 60px rgba(251,191,36,0.4)',
+                }}
+              >
+                <div className="text-7xl" style={{ filter: 'drop-shadow(0 0 28px #FBBF24)' }}>📋</div>
+                <div className="text-center px-3">
+                  <div className="font-oswald text-lg text-white uppercase tracking-wide">Тренерський Пакет</div>
+                  <div className="font-oswald text-sm text-[#FBBF24] mt-1">1 тренер</div>
+                </div>
+              </div>
+            </motion.div>
+
+            {phase === 'confirm' && (
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-gray-400 text-sm flex items-center gap-2">
+                  1 тренер за <span className="font-bold text-[#FBBF24] flex items-center gap-1"><CoinIcon size={16} />350</span>
+                </p>
+                <div className="flex gap-3">
+                  <button onClick={() => navigate('/shop')} className="px-5 py-2.5 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer text-sm">
+                    Скасувати
+                  </button>
+                  <button
+                    onClick={handleOpen}
+                    className="px-7 py-2.5 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer text-sm"
+                    style={{ background: 'linear-gradient(135deg, #FBBF24, #D97706)', color: '#0D0900' }}
+                  >
+                    Відкрити! ✨
+                  </button>
+                </div>
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {phase === 'revealed' && result && (
+          <motion.div
+            key="revealed"
+            className="flex flex-col items-center gap-6 w-full max-w-xs"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="text-center">
+              <div className="font-oswald text-xs tracking-[0.25em] text-[#FBBF24] uppercase mb-1">
+                {result.isLevelUp ? '· Підвищення рівня! ·' : '· Новий тренер! ·'}
+              </div>
+              <h1 className="font-oswald text-3xl font-bold uppercase tracking-wide text-white">
+                {coach.name}
+              </h1>
+            </div>
+
+            <div style={{ width: '180px' }}>
+              <CoachCard coach={coach} level={result.newLevel} />
+            </div>
+
+            {result.isLevelUp && (
+              <div className="text-[#FBBF24] font-semibold text-sm bg-[#FBBF24]/10 border border-[#FBBF24]/30 px-4 py-2 rounded-xl">
+                Перк підвищено до рівня {result.newLevel}!
+              </div>
+            )}
+            {result.refundCoins > 0 && (
+              <div className="text-yellow-400 font-semibold text-sm flex items-center gap-1">
+                +{result.refundCoins} <CoinIcon size={16} /> (максимальний рівень)
+              </div>
+            )}
+
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <button onClick={() => navigate('/shop')} className="flex-1 px-6 py-3 bg-gray-800 hover:bg-gray-700 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer">
+                Магазин
+              </button>
+              <button onClick={() => navigate('/team')} className="flex-1 px-6 py-3 rounded-xl font-oswald font-bold uppercase tracking-wider cursor-pointer" style={{ background: 'linear-gradient(135deg, #FBBF24, #D97706)', color: '#0D0900' }}>
+                До команди
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  )
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export function PackOpening() {
   const location = useLocation()
@@ -345,7 +473,7 @@ export function PackOpening() {
   const buyPack = useAppStore(state => state.buyPack)
   const pushPendingUnlock = useAppStore(state => state.pushPendingUnlock)
   const collection = useAppStore(state => state.collection)
-  const state = location.state as LocationState | null
+  const locationState = normalizeState(location.state)
 
   const [phase, setPhase] = useState<Phase>('confirm')
   const [revealed, setRevealed] = useState(0)
@@ -354,7 +482,7 @@ export function PackOpening() {
   const [cardRefunds, setCardRefunds] = useState<Record<number, number>>({})
   const pendingAchievements = useRef<string[]>([])
 
-  if (!state?.pack || !state?.cards || state.nextPityCounter === undefined) {
+  if (!locationState) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
         <p className="text-gray-400">Пакет не обрано.</p>
@@ -368,7 +496,11 @@ export function PackOpening() {
     )
   }
 
-  const { pack, cards, nextPityCounter } = state
+  if (locationState.type === 'coach') {
+    return <CoachPackOpening coach={locationState.coach} />
+  }
+
+  const { pack, cards, nextPityCounter } = locationState
   const theme = getTheme(pack.id)
 
   function startOpening() {
