@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import type { Coach } from '../../types'
 
 const LEVEL_STARS = ['☆☆☆', '★☆☆', '★★☆', '★★★']
@@ -10,15 +11,18 @@ interface CoachCardProps {
 }
 
 function CoachPhoto({ coach }: { coach: Coach }) {
-  return coach.photoUrl ? (
+  const [failed, setFailed] = useState(false)
+
+  if (!coach.photoUrl || failed) {
+    return <div className="w-full h-full flex items-center justify-center text-3xl">{coach.emoji}</div>
+  }
+  return (
     <img
       src={`${import.meta.env.BASE_URL}${coach.photoUrl.replace(/^\//, '')}`}
       alt={coach.name}
       className="w-full h-full object-cover object-top"
-      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+      onError={() => setFailed(true)}
     />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center text-3xl">{coach.emoji}</div>
   )
 }
 
