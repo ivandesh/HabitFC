@@ -61,8 +61,8 @@ function PitchSVG() {
       <rect x="72" y="324" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
       <rect x="108" y="362" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
       <rect x="126" y="382" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
-      <circle cx="150" cy="88" r="2.5" fill="white" fillOpacity="0.3" />
-      <circle cx="150" cy="312" r="2.5" fill="white" fillOpacity="0.3" />
+      <circle cx="150" cy="60" r="2.5" fill="white" fillOpacity="0.3" />
+      <circle cx="150" cy="340" r="2.5" fill="white" fillOpacity="0.3" />
       <path d="M 100 76 A 50 50 0 0 0 200 76" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
       <path d="M 100 324 A 50 50 0 0 1 200 324" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
     </svg>

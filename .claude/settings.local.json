@@ -1,7 +1,12 @@
 {
   "permissions": {
     "allow": [
-      "WebFetch(domain:fbref.com)"
+      "WebFetch(domain:fbref.com)",
+      "Bash(git:*)",
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(node:*)",
+      "Bash(grep:*)"
     ]
   }
 }
