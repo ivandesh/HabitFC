@@ -4,7 +4,10 @@ import { footballers } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
-import type { AppState, Position } from '../types'
+import type { AppState, Position, Footballer } from '../types'
+import { coaches as allCoaches } from '../data/coaches'
+import { computeCoachChemistryPct, getCoachLevel, applyCoachStatBoost } from '../lib/coachPerks'
+import { CoachCard } from '../components/cards/CoachCard'
 
 const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
 
@@ -89,6 +92,11 @@ export function Team() {
   const collection = useAppStore(state => state.collection)
   const squadForBonuses = useAppStore(state => state.squad)
 
+  const coachCollection = useAppStore(state => state.coachCollection)
+  const assignedCoach = useAppStore(state => state.assignedCoach)
+  const assignCoach = useAppStore(state => state.assignCoach)
+  const [coachPickerOpen, setCoachPickerOpen] = useState(false)
+
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
   const [panelMode, setPanelMode] = useState<PanelMode>('idle')
 
@@ -115,6 +123,24 @@ export function Team() {
 
   const activeBonuses = useMemo(() => computeActiveBonuses({ squad: squadForBonuses } as AppState), [squadForBonuses])
   const bonusPct = totalBonusPercent(activeBonuses)
+
+  const assignedCoachObj = useMemo(
+    () => assignedCoach ? allCoaches.find(c => c.id === assignedCoach) ?? null : null,
+    [assignedCoach]
+  )
+
+  const coachChemPct = useMemo(() => {
+    if (!assignedCoachObj) return 0
+    return computeCoachChemistryPct(assignedCoachObj, filledPlayers)
+  }, [assignedCoachObj, filledPlayers])
+
+  const coachLevel = assignedCoach ? getCoachLevel(assignedCoach, coachCollection) : 0
+
+  const appState = useAppStore(state => state)
+
+  function boostedFootballer(f: Footballer) {
+    return applyCoachStatBoost(f, appState)
+  }
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
@@ -255,6 +281,59 @@ export function Team() {
         </div>
       )}
 
+      {/* Coach chemistry stats row */}
+      {coachChemPct > 0 && assignedCoachObj && (
+        <div className="mb-4 bg-[#0A0F1A] border border-[#FBBF24]/20 rounded-xl px-4 py-3">
+          <div className="text-[10px] text-[#5A7090] uppercase tracking-wider mb-2 font-oswald">Хімія тренера</div>
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-[#5A7090]">{assignedCoachObj.name}</span>
+            <span className="text-[10px] font-oswald font-bold text-[#FBBF24]">+{coachChemPct}%</span>
+          </div>
+        </div>
+      )}
+
+      {/* Coach slot */}
+      <div className="mb-4">
+        {assignedCoachObj ? (
+          <div
+            className="flex items-center gap-3 bg-[#0A0F1A] border border-[#FBBF24]/30 rounded-2xl px-4 py-3 cursor-pointer hover:border-[#FBBF24]/60 transition-colors"
+            onClick={() => setCoachPickerOpen(true)}
+          >
+            <div className="w-12 h-12 rounded-xl overflow-hidden bg-black/40 ring-2 ring-[#FBBF24]/50 shrink-0">
+              {assignedCoachObj.photoUrl ? (
+                <img
+                  src={`${import.meta.env.BASE_URL}${assignedCoachObj.photoUrl.replace(/^\//, '')}`}
+                  alt={assignedCoachObj.name}
+                  className="w-full h-full object-cover object-top"
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-xl">{assignedCoachObj.emoji}</div>
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-oswald font-bold text-white text-sm truncate">{assignedCoachObj.name}</div>
+              <div className="text-[10px] text-[#FBBF24]/70 truncate">
+                {assignedCoachObj.perk.descUA[coachLevel - 1]}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <div className="text-[#FBBF24] text-xs">{'★'.repeat(coachLevel)}{'☆'.repeat(3 - coachLevel)}</div>
+              {coachChemPct > 0 && (
+                <div className="text-[10px] font-oswald font-bold text-[#FBBF24]">+{coachChemPct}% хімія</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => setCoachPickerOpen(true)}
+            className="w-full py-3 border-2 border-dashed border-[#FBBF24]/30 rounded-2xl font-oswald text-sm text-[#FBBF24]/50 hover:border-[#FBBF24]/60 hover:text-[#FBBF24]/70 transition-colors cursor-pointer"
+          >
+            + Призначити тренера
+          </button>
+        )}
+      </div>
+
       <div className="flex flex-col lg:flex-row gap-6 items-start justify-center">
         {/* Pitch */}
         <div className="w-full lg:w-1/2 max-w-[480px] mx-auto lg:mx-0 shrink-0">
@@ -290,7 +369,7 @@ export function Team() {
                         {footballer.name.split(' ').slice(-1)[0]}
                       </div>
                       <div className="text-[9px] sm:text-[11px] font-oswald font-bold text-[#00E676] leading-none drop-shadow">
-                        {playerOverall(footballer)}
+                        {playerOverall(boostedFootballer(footballer))}
                       </div>
                     </div>
                   ) : (
@@ -363,15 +442,20 @@ export function Team() {
                       <div>
                         <div className="font-oswald font-bold text-white text-lg leading-tight">{activePlayer.name}</div>
                         <div className="text-xs text-[#5A7090]">{activePlayer.club} · {activePlayer.nationality}</div>
-                        <div className="font-oswald font-bold text-[#00E676] text-xl mt-1">{playerOverall(activePlayer)}</div>
+                        <div className="font-oswald font-bold text-[#00E676] text-xl mt-1">{playerOverall(boostedFootballer(activePlayer))}</div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <StatBar label="Швидкість" value={activePlayer.stats.pace} />
-                      <StatBar label="Удар" value={activePlayer.stats.shooting} />
-                      <StatBar label="Пас" value={activePlayer.stats.passing} />
-                      <StatBar label="Дриблінг" value={activePlayer.stats.dribbling} />
-                    </div>
+                    {(() => {
+                      const bs = boostedFootballer(activePlayer)
+                      return (
+                        <div className="space-y-2">
+                          <StatBar label="Швидкість" value={bs.stats.pace} />
+                          <StatBar label="Удар" value={bs.stats.shooting} />
+                          <StatBar label="Пас" value={bs.stats.passing} />
+                          <StatBar label="Дриблінг" value={bs.stats.dribbling} />
+                        </div>
+                      )
+                    })()}
                     <button
                       onClick={handleRemoveFromStats}
                       className="mt-4 w-full py-2 rounded-xl border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 transition-colors cursor-pointer"
@@ -473,6 +557,63 @@ export function Team() {
           )}
         </div>
       </div>
+
+      {/* Coach picker bottom sheet */}
+      {coachPickerOpen && (
+        <div
+          className="fixed left-0 right-0 z-50 bg-[#0A0F1A] border border-b-0 border-[#FBBF24]/20 rounded-t-2xl overflow-hidden"
+          style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="flex justify-center pt-2.5 pb-1 sm:hidden">
+            <div className="w-8 h-1 bg-[#2A3A50] rounded-full" />
+          </div>
+          <div className="max-h-[60vh] overflow-y-auto p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="font-oswald text-lg font-bold text-white">Вибери тренера</div>
+              <button onClick={() => setCoachPickerOpen(false)} className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg text-xl cursor-pointer">×</button>
+            </div>
+
+            {assignedCoach && (
+              <button
+                onClick={() => { assignCoach(null); setCoachPickerOpen(false) }}
+                className="w-full mb-3 py-2 border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
+              >
+                Зняти тренера
+              </button>
+            )}
+
+            {(() => {
+              const ownedCoaches = allCoaches.filter(c => (coachCollection[c.id] ?? 0) > 0)
+              if (ownedCoaches.length === 0) {
+                return (
+                  <div className="text-center py-8 text-[#5A7090]">
+                    <div className="text-4xl mb-3">📋</div>
+                    <div className="font-oswald text-sm text-white">Немає тренерів</div>
+                    <div className="text-xs mt-1">Купи Тренерський Пакет у магазині</div>
+                  </div>
+                )
+              }
+              return (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                  {ownedCoaches.map(c => {
+                    const lvl = getCoachLevel(c.id, coachCollection)
+                    const isActive = assignedCoach === c.id
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => { assignCoach(c.id); setCoachPickerOpen(false) }}
+                        className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
+                      >
+                        <CoachCard coach={c} level={lvl} mini={false} showPerk />
+                      </button>
+                    )
+                  })}
+                </div>
+              )
+            })()}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
