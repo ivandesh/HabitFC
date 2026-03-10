@@ -401,6 +401,68 @@ export const ACHIEVEMENTS: AchievementDef[] = [
       (s.collection['musiala'] ?? 0) > 0 &&
       (s.collection['wirtz'] ?? 0) > 0,
   },
+
+  // ── Coaches — Memes ───────────────────────────────────────────────────────────
+  {
+    id: 'special_one',
+    titleUA: 'Особливий',
+    descUA: 'Призначив Моурінью. Він вже проводить прес-конференцію.',
+    category: 'memes',
+    icon: '😏',
+    condition: s => s.assignedCoach === 'mourinho',
+  },
+  {
+    id: 'pep_or_pep',
+    titleUA: 'Тіктака чи Тіктака?',
+    descUA: 'Маєш і Гвардіолу, і Хаві. Обидва хочуть, щоб усі пасували. Постійно.',
+    category: 'memes',
+    icon: '🧠',
+    condition: s => (s.coachCollection['guardiola'] ?? 0) > 0 && (s.coachCollection['xavi'] ?? 0) > 0,
+  },
+  {
+    id: 'the_klopp',
+    titleUA: 'ЙЄЄЄС!',
+    descUA: 'Призначив Клоппа. Тепер твоя команда пресингує суперника навіть у нього вдома.',
+    category: 'memes',
+    icon: '😁',
+    condition: s => s.assignedCoach === 'klopp',
+  },
+  {
+    id: 'invincible_process',
+    titleUA: 'Процес',
+    descUA: 'Маєш Артету і Венгера одночасно. Арсенал живе у твоєму серці.',
+    category: 'memes',
+    icon: '🔴',
+    condition: s => (s.coachCollection['arteta'] ?? 0) > 0 && (s.coachCollection['wenger'] ?? 0) > 0,
+  },
+
+  // ── Coaches — Collection ──────────────────────────────────────────────────────
+  {
+    id: 'tactics_nerd',
+    titleUA: 'Тактичний Геній',
+    descUA: 'Зібрав 5 тренерів. Ти вже малюєш схеми на серветках.',
+    category: 'collection',
+    icon: '📋',
+    progressFn: s => ({
+      current: Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length,
+      total: 5,
+    }),
+    condition: s =>
+      Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length >= 5,
+  },
+  {
+    id: 'full_dugout',
+    titleUA: 'Повна лавка',
+    descUA: 'Зібрав усіх 21 тренера. Хто взагалі тренує команду?',
+    category: 'collection',
+    icon: '🏟️',
+    progressFn: s => ({
+      current: Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length,
+      total: 21,
+    }),
+    condition: s =>
+      Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length >= 21,
+  },
 ]
 
 /** Returns IDs of achievements that are now unlocked but not yet recorded. */
