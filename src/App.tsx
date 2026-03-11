@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { AchievementToastManager } from './components/ui/AchievementToast'
 import { Dashboard } from './pages/Dashboard'
@@ -190,6 +191,12 @@ function NavBar() {
   )
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => { window.scrollTo(0, 0) }, [pathname])
+  return null
+}
+
 function BottomNav() {
   const { pathname } = useLocation()
   if (pathname === '/open') return null
@@ -236,6 +243,7 @@ export default function App() {
         <Route path="/*" element={
           <AuthGuard>
             <div className="min-h-screen bg-[#04060A] stadium-lines">
+              <ScrollToTop />
               <AchievementToastManager />
               <NavBar />
               {/* pb-14 offsets the fixed bottom nav on mobile */}
