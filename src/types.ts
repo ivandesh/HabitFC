@@ -45,6 +45,7 @@ export interface AppState {
   pityCounters: Record<string, number>  // keyed by pack id
   coachCollection: Record<string, number>   // coachId → copies owned
   assignedCoach: string | null
+  following: string[]           // user_ids this user follows
 }
 
 export type CoachPerkType =

@@ -49,6 +49,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       pityCounters: {},
       coachCollection: {},
       assignedCoach: null,
+      following: [],
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -218,6 +219,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           pityCounters: {},
           coachCollection: {},
           assignedCoach: null,
+          following: [],
         })
       },
 
@@ -236,6 +238,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           pityCounters: data.pityCounters ?? {},
           coachCollection: data.coachCollection ?? {},
           assignedCoach: data.assignedCoach ?? null,
+          following: data.following ?? [],
         })
       },
 
