@@ -27,14 +27,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       }
     })
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       const u = session?.user ?? null
       setUser(u)
 
-      if (!u) {
+      if (event === 'SIGNED_OUT') {
         unsubscribeSync?.()
         unsubscribeSync = null
         navigate('/login')
+      } else if (u && !unsubscribeSync) {
+        loadState(u.id).then(state => {
+          if (state) importState(state)
+          unsubscribeSync = syncSubscribe(u.id)
+        })
       }
     })
 
