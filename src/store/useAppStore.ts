@@ -4,7 +4,7 @@ import { scheduleSave, flushSave } from '../lib/stateSync'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
-import { checkAchievements } from '../lib/achievements'
+import { checkAchievements, ACHIEVEMENTS } from '../lib/achievements'
 import { computeCoachHabitBonus } from '../lib/coachPerks'
 
 interface AppStore extends AppState {
@@ -30,6 +30,7 @@ interface AppStore extends AppState {
   importState: (data: Partial<AppState>) => void
   // Achievements
   unlockAchievement: (id: string) => void
+  claimAchievementReward: (id: string) => void
   drainPendingUnlock: () => string | undefined
   setFormation: (formation: string) => void
 }
@@ -41,6 +42,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       pullHistory: [],
       squad: Array(11).fill(null),
       achievements: {},
+      claimedAchievements: {},
       totalCompletions: 0,
       formation: '4-3-3',
       pendingUnlocks: [],
@@ -209,6 +211,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           pullHistory: [],
           squad: Array(11).fill(null),
           achievements: {},
+          claimedAchievements: {},
           totalCompletions: 0,
           formation: '4-3-3',
           pendingUnlocks: [],
@@ -226,6 +229,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           pullHistory: data.pullHistory ?? [],
           squad: data.squad ?? Array(11).fill(null),
           achievements: data.achievements ?? {},
+          claimedAchievements: data.claimedAchievements ?? {},
           totalCompletions: data.totalCompletions ?? 0,
           formation: data.formation ?? '4-3-3',
           pendingUnlocks: [],
@@ -242,6 +246,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
             [id]: { unlockedAt: new Date().toISOString() },
           },
           pendingUnlocks: [...state.pendingUnlocks, id],
+        }))
+      },
+
+      claimAchievementReward: (id) => {
+        const state = get()
+        if (!state.achievements[id] || state.claimedAchievements[id]) return
+        const def = ACHIEVEMENTS.find(a => a.id === id)
+        if (!def) return
+        set(s => ({
+          coins: s.coins + def.coinReward,
+          claimedAchievements: { ...s.claimedAchievements, [id]: true },
         }))
       },
 

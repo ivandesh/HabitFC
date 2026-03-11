@@ -38,6 +38,7 @@ export interface AppState {
   pullHistory: { footballerId: string; pulledAt: string }[]
   squad: (string | null)[]
   achievements: Record<string, { unlockedAt: string }>
+  claimedAchievements: Record<string, true>
   totalCompletions: number
   formation: string
   pendingUnlocks: string[]  // not persisted — UI drain queue

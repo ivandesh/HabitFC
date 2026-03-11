@@ -16,14 +16,16 @@ const TABS: { key: Category; label: string }[] = [
 
 export function Achievements() {
   const achievements = useAppStore(state => state.achievements)
+  const claimedAchievements = useAppStore(state => state.claimedAchievements)
+  const claimAchievementReward = useAppStore(state => state.claimAchievementReward)
   const totalCompletions = useAppStore(state => state.totalCompletions)
   const collection = useAppStore(state => state.collection)
   const squad = useAppStore(state => state.squad)
   const coachCollection = useAppStore(state => state.coachCollection)
   const assignedCoach = useAppStore(state => state.assignedCoach)
   const progressState = useMemo(
-    () => ({ achievements, totalCompletions, collection, squad, coachCollection, assignedCoach } as AppState),
-    [achievements, totalCompletions, collection, squad, coachCollection, assignedCoach]
+    () => ({ achievements, claimedAchievements, totalCompletions, collection, squad, coachCollection, assignedCoach } as AppState),
+    [achievements, claimedAchievements, totalCompletions, collection, squad, coachCollection, assignedCoach]
   )
   const [tab, setTab] = useState<Category>('all')
 
@@ -81,6 +83,7 @@ export function Achievements() {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {filtered.map(a => {
           const unlocked = !!achievements[a.id]
+          const claimed = !!claimedAchievements[a.id]
           const progress = a.progressFn?.(progressState)
 
           return (
@@ -121,7 +124,15 @@ export function Achievements() {
                   </div>
                 )}
               </div>
-              {unlocked && (
+              {unlocked && !claimed && (
+                <button
+                  onClick={() => claimAchievementReward(a.id)}
+                  className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#00E676] text-[#04060A] font-oswald font-bold text-xs uppercase tracking-wider hover:bg-[#00FF88] active:scale-95 transition-all cursor-pointer"
+                >
+                  🪙 {a.coinReward}
+                </button>
+              )}
+              {unlocked && claimed && (
                 <div className="shrink-0 w-6 h-6 rounded-full bg-[#00E676]/20 flex items-center justify-center">
                   <div className="w-2 h-2 rounded-full bg-[#00E676]" />
                 </div>

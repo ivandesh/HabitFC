@@ -7,6 +7,7 @@ export interface AchievementDef {
   descUA: string
   category: 'habits' | 'collection' | 'team' | 'memes'
   icon: string
+  coinReward: number
   progressFn?: (state: AppState) => { current: number; total: number }
   condition: (state: AppState) => boolean
 }
@@ -19,6 +20,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Виконай 1 звичку',
     category: 'habits',
     icon: '👟',
+    coinReward: 10,
     condition: s => s.totalCompletions >= 1,
   },
   {
@@ -27,6 +29,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Досягни серії 3 дні підряд',
     category: 'habits',
     icon: '🔥',
+    coinReward: 10,
     condition: s => s.habits.some(h => h.streak >= 3),
   },
   {
@@ -35,6 +38,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Досягни серії 7 днів підряд',
     category: 'habits',
     icon: '⚔️',
+    coinReward: 50,
     condition: s => s.habits.some(h => h.streak >= 7),
   },
   {
@@ -43,6 +47,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Виконай 100 звичок',
     category: 'habits',
     icon: '💯',
+    coinReward: 100,
     progressFn: s => ({ current: s.totalCompletions, total: 100 }),
     condition: s => s.totalCompletions >= 100,
   },
@@ -52,6 +57,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Досягни серії 30 днів підряд',
     category: 'habits',
     icon: '🏆',
+    coinReward: 100,
     condition: s => s.habits.some(h => h.streak >= 30),
   },
 
@@ -62,6 +68,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри 10 карток',
     category: 'collection',
     icon: '📦',
+    coinReward: 10,
     progressFn: s => ({
       current: Object.keys(s.collection).filter(id => (s.collection[id] ?? 0) > 0).length,
       total: 10,
@@ -75,6 +82,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай хоча б одну легендарну картку',
     category: 'collection',
     icon: '⭐',
+    coinReward: 50,
     condition: s =>
       footballers
         .filter(f => f.rarity === 'legendary')
@@ -86,6 +94,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх легендарних гравців',
     category: 'collection',
     icon: '👑',
+    coinReward: 100,
     progressFn: s => {
       const legendaries = footballers.filter(f => f.rarity === 'legendary')
       return {
@@ -104,6 +113,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх гравців Реал Мадрид',
     category: 'collection',
     icon: '⚪',
+    coinReward: 50,
     progressFn: s => {
       const club = footballers.filter(f => f.club === 'Real Madrid')
       return {
@@ -122,6 +132,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх гравців Барселони',
     category: 'collection',
     icon: '🔵',
+    coinReward: 50,
     progressFn: s => {
       const club = footballers.filter(f => f.club === 'Barcelona')
       return {
@@ -140,6 +151,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх гравців Ман Сіті',
     category: 'collection',
     icon: '🔷',
+    coinReward: 50,
     progressFn: s => {
       const club = footballers.filter(f => f.club === 'Man City')
       return {
@@ -158,6 +170,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх гравців Ліверпуля',
     category: 'collection',
     icon: '🔴',
+    coinReward: 50,
     progressFn: s => {
       const club = footballers.filter(f => f.club === 'Liverpool')
       return {
@@ -176,6 +189,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх воротарів',
     category: 'collection',
     icon: '🧤',
+    coinReward: 50,
     progressFn: s => {
       const gks = footballers.filter(f => f.position === 'GK')
       return {
@@ -194,6 +208,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібри всіх нападників',
     category: 'collection',
     icon: '⚡',
+    coinReward: 50,
     progressFn: s => {
       const fwds = footballers.filter(f => f.position === 'FWD')
       return {
@@ -214,6 +229,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Заповни всі 11 позицій у складі',
     category: 'team',
     icon: '⚽',
+    coinReward: 10,
     progressFn: s => ({
       current: s.squad.filter(Boolean).length,
       total: 11,
@@ -226,6 +242,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: "Досягни 15 хімічних зв'язків",
     category: 'team',
     icon: '🧪',
+    coinReward: 50,
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
@@ -245,6 +262,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Досягни загального рейтингу складу 85+',
     category: 'team',
     icon: '🌟',
+    coinReward: 100,
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
@@ -267,6 +285,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Роналду. Він вже святкує.',
     category: 'memes',
     icon: '🎤',
+    coinReward: 10,
     condition: s => (s.collection['ronaldo'] ?? 0) > 0,
   },
   {
@@ -275,6 +294,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Мессі. G.O.A.T. у кишені.',
     category: 'memes',
     icon: '🐐',
+    coinReward: 10,
     condition: s => (s.collection['messi'] ?? 0) > 0,
   },
   {
@@ -283,6 +303,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Голанда. Він не людина.',
     category: 'memes',
     icon: '🤖',
+    coinReward: 10,
     condition: s => (s.collection['haaland'] ?? 0) > 0,
   },
   {
@@ -291,6 +312,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Модріча. Він невмирущий.',
     category: 'memes',
     icon: '👴',
+    coinReward: 10,
     condition: s => (s.collection['modric'] ?? 0) > 0,
   },
   {
@@ -299,6 +321,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Вініcіуса. Він вже танцює.',
     category: 'memes',
     icon: '💃',
+    coinReward: 10,
     condition: s => (s.collection['vinicius'] ?? 0) > 0,
   },
   {
@@ -307,6 +330,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Нойєра. Він впевнений, що він захисник.',
     category: 'memes',
     icon: '🧤',
+    coinReward: 10,
     condition: s => (s.collection['neuer'] ?? 0) > 0,
   },
   {
@@ -315,6 +339,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Левандовського. Знову 5 голів?',
     category: 'memes',
     icon: '⚡',
+    coinReward: 10,
     condition: s => (s.collection['lewandowski'] ?? 0) > 0,
   },
   {
@@ -323,6 +348,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Ямала. Він молодший за тебе. І він вже чемпіон Європи.',
     category: 'memes',
     icon: '🍼',
+    coinReward: 10,
     condition: s => (s.collection['yamal'] ?? 0) > 0,
   },
   {
@@ -331,6 +357,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Педрі. Найталановитіший гравець покоління. Фізіотерапевт Барселони знає його краще за тренера.',
     category: 'memes',
     icon: '🩹',
+    coinReward: 10,
     condition: s => (s.collection['pedri'] ?? 0) > 0,
   },
   {
@@ -339,6 +366,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Кіммiха. Менталітет. Характер. Воля до перемоги.',
     category: 'memes',
     icon: '🧠',
+    coinReward: 10,
     condition: s => (s.collection['kimmich'] ?? 0) > 0,
   },
   {
@@ -347,6 +375,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Доннаруму. 1.96 метра чистого жаху. Нападники підходять до штрафної і просто плачуть.',
     category: 'memes',
     icon: '🏔️',
+    coinReward: 10,
     condition: s => (s.collection['donnarumma'] ?? 0) > 0,
   },
   {
@@ -355,6 +384,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Зінченка. Артета вигадав для нього нову позицію: лівий центральний атакуючий захисний півзахисник.',
     category: 'memes',
     icon: '🧩',
+    coinReward: 10,
     condition: s => (s.collection['zinchenko'] ?? 0) > 0,
   },
   {
@@ -363,6 +393,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Миколенка. Грати в Евертоні та залишатися психічно здоровим — це вже досягнення.',
     category: 'memes',
     icon: '⚓',
+    coinReward: 10,
     condition: s => (s.collection['mykolenko'] ?? 0) > 0,
   },
   {
@@ -371,6 +402,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зінченко і Миколенко в колекції. АПЛ — наш. Лівий фланг — наш. Слава Україні.',
     category: 'memes',
     icon: '🌻',
+    coinReward: 50,
     condition: s => (s.collection['zinchenko'] ?? 0) > 0 && (s.collection['mykolenko'] ?? 0) > 0,
   },
   {
@@ -379,6 +411,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Отримай Неймара. Він не грає. Він ніколи не грає. Але картка красива.',
     category: 'memes',
     icon: '🏥',
+    coinReward: 10,
     condition: s => (s.collection['neymar'] ?? 0) > 0,
   },
   {
@@ -387,6 +420,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Маєш і Мессі, і Роналду. Тепер сперечайся сам із собою до 3 ночі.',
     category: 'memes',
     icon: '⚔️',
+    coinReward: 50,
     condition: s => (s.collection['messi'] ?? 0) > 0 && (s.collection['ronaldo'] ?? 0) > 0,
   },
   {
@@ -395,6 +429,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Ямал, Беллінгем, Мусіала і Вірц. Кожен — "наступний Мессі". Хто правий?',
     category: 'memes',
     icon: '✨',
+    coinReward: 50,
     condition: s =>
       (s.collection['yamal'] ?? 0) > 0 &&
       (s.collection['bellingham'] ?? 0) > 0 &&
@@ -409,6 +444,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Призначив Моурінью. Він вже проводить прес-конференцію.',
     category: 'memes',
     icon: '😏',
+    coinReward: 10,
     condition: s => s.assignedCoach === 'mourinho',
   },
   {
@@ -417,6 +453,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Маєш і Гвардіолу, і Хаві. Обидва хочуть, щоб усі пасували. Постійно.',
     category: 'memes',
     icon: '🧠',
+    coinReward: 50,
     condition: s => (s.coachCollection['guardiola'] ?? 0) > 0 && (s.coachCollection['xavi'] ?? 0) > 0,
   },
   {
@@ -425,6 +462,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Призначив Клоппа. Тепер твоя команда пресингує суперника навіть у нього вдома.',
     category: 'memes',
     icon: '😁',
+    coinReward: 10,
     condition: s => s.assignedCoach === 'klopp',
   },
   {
@@ -433,6 +471,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Маєш Артету і Венгера одночасно. Арсенал живе у твоєму серці.',
     category: 'memes',
     icon: '🔴',
+    coinReward: 50,
     condition: s => (s.coachCollection['arteta'] ?? 0) > 0 && (s.coachCollection['wenger'] ?? 0) > 0,
   },
 
@@ -443,6 +482,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібрав 5 тренерів. Ти вже малюєш схеми на серветках.',
     category: 'collection',
     icon: '📋',
+    coinReward: 50,
     progressFn: s => ({
       current: Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length,
       total: 5,
@@ -456,6 +496,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     descUA: 'Зібрав усіх 21 тренера. Хто взагалі тренує команду?',
     category: 'collection',
     icon: '🏟️',
+    coinReward: 100,
     progressFn: s => ({
       current: Object.keys(s.coachCollection).filter(id => (s.coachCollection[id] ?? 0) > 0).length,
       total: 21,
