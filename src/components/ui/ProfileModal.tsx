@@ -42,20 +42,25 @@ export function ProfileModal({ onClose }: Props) {
   // Load current profile on mount
   useEffect(() => {
     if (!user) return
-    supabase
-      .from('user_state')
-      .select('username, avatar_url, avatar_emoji')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('user_state')
+          .select('username, avatar_url, avatar_emoji')
+          .eq('user_id', user.id)
+          .single()
         if (data) {
           setUsername(data.username ?? '')
           setUsernameInput(data.username ?? '')
           setAvatarUrl(data.avatar_url ?? null)
           setAvatarEmoji(data.avatar_emoji ?? null)
         }
+      } catch {
+        // Silent failure on profile load
+      } finally {
         setLoaded(true)
-      })
+      }
+    })()
   }, [user])
 
   async function handleSaveUsername() {
@@ -84,6 +89,8 @@ export function ProfileModal({ onClose }: Props) {
       await saveAvatarEmoji(user.id, emoji)
       setAvatarEmoji(emoji)
       setAvatarUrl(null)
+    } catch {
+      // silent failure — avatarLoading will clear in finally
     } finally {
       setAvatarLoading(false)
     }
@@ -98,6 +105,8 @@ export function ProfileModal({ onClose }: Props) {
       await saveAvatarUrl(user.id, url)
       setAvatarUrl(url)
       setAvatarEmoji(null)
+    } catch {
+      // silent failure — avatarLoading will clear in finally
     } finally {
       setAvatarLoading(false)
     }
