@@ -2,7 +2,7 @@ import type { Habit } from '../../types'
 import { useAppStore } from '../../store/useAppStore'
 import { StreakBadge } from '../ui/StreakBadge'
 import { CoinIcon } from '../ui/CoinIcon'
-import { isCompletedToday, streakMultiplier } from '../../lib/streaks'
+import { isCompletedToday, isStreakActive, streakMultiplier } from '../../lib/streaks'
 import { playHabitComplete } from '../../lib/sounds'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -16,7 +16,8 @@ export function HabitCard({ habit, onEdit }: Props) {
   const completeHabit = useAppStore(state => state.completeHabit)
   const removeHabit = useAppStore(state => state.removeHabit)
   const done = isCompletedToday(habit.lastCompleted)
-  const multiplier = streakMultiplier(habit.streak)
+  const activeStreak = isStreakActive(habit.lastCompleted) ? habit.streak : 0
+  const multiplier = streakMultiplier(activeStreak)
   const earned = Math.round(habit.coinValue * multiplier)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: habit.id })
@@ -74,8 +75,8 @@ export function HabitCard({ habit, onEdit }: Props) {
             {habit.name}
           </div>
           <div className="mt-1.5">
-            {habit.streak > 0
-              ? <StreakBadge streak={habit.streak} />
+            {activeStreak > 0
+              ? <StreakBadge streak={activeStreak} />
               : <span className="text-xs text-[#3A4A5A]">Немає серії</span>
             }
           </div>

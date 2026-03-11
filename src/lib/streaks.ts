@@ -28,3 +28,10 @@ export function calculateNewStreak(currentStreak: number, lastCompleted: string)
 export function isCompletedToday(lastCompleted: string): boolean {
   return lastCompleted === getToday()
 }
+
+/** Returns true if the streak is still alive (completed today or yesterday) */
+export function isStreakActive(lastCompleted: string): boolean {
+  const today = getToday()
+  const yesterday = getYesterday()
+  return lastCompleted === today || lastCompleted === yesterday
+}
