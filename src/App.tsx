@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
 import { AchievementToastManager } from './components/ui/AchievementToast'
 import { Dashboard } from './pages/Dashboard'
@@ -11,6 +11,9 @@ import { LoginPage } from './pages/LoginPage'
 import { AuthGuard } from './components/AuthGuard'
 import { useAppStore } from './store/useAppStore'
 import { useAuthStore } from './store/useAuthStore'
+import { Friends } from './pages/Friends'
+import { FriendProfile } from './pages/FriendProfile'
+import { ProfileModal } from './components/ui/ProfileModal'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
@@ -38,10 +41,23 @@ const TrophyIcon = () => (
   </svg>
 )
 
+const FriendsIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z" />
+  </svg>
+)
+
+const ProfileIcon = () => (
+  <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
+    <path d="M12 12c2.7 0 4.8-2.1 4.8-4.8S14.7 2.4 12 2.4 7.2 4.5 7.2 7.2 9.3 12 12 12zm0 2.4c-3.2 0-9.6 1.6-9.6 4.8v2.4h19.2v-2.4c0-3.2-6.4-4.8-9.6-4.8z" />
+  </svg>
+)
+
 function NavBar() {
   const resetAll = useAppStore(state => state.resetAll)
   const importState = useAppStore(state => state.importState)
   const { signOut } = useAuthStore()
+  const [profileOpen, setProfileOpen] = useState(false)
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
@@ -104,90 +120,101 @@ function NavBar() {
   }
 
   return (
-    <nav className="sticky top-0 z-40 bg-[#04060A]/95 backdrop-blur-md border-b border-[#1A2336]">
-      {/* Mobile: minimal top bar — logo + data buttons + reset */}
-      <div className="sm:hidden px-4 flex items-center justify-between h-12">
-        <span className="font-oswald text-lg font-bold tracking-wider">
-          <span className="text-[#00E676]">⚽</span>{' '}
-          <span className="text-white">HABIT<span className="text-[#00E676]">FC</span></span>
-        </span>
-        <div className="flex items-center gap-1">
-          {/* <button
-            onClick={handleExport}
-            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
-            title="Експорт даних"
-          >
-            ⬇️
-          </button>
-          <button
-            onClick={handleImport}
-            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
-            title="Імпорт даних"
-          >
-            ⬆️
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
-            title="Скинути прогрес"
-          >
-            🔄
-          </button> */}
-          <button
-            onClick={() => signOut()}
-            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
-            title="Вийти з акаунту"
-          >
-            🚪
-          </button>
-        </div>
-      </div>
-
-      {/* Desktop: full nav bar */}
-      <div className="hidden sm:flex max-w-7xl mx-auto px-4 items-center gap-1">
-        <span className="font-oswald text-xl font-bold mr-3 py-3 shrink-0 tracking-wider">
-          <span className="text-[#00E676]">⚽</span>{' '}
-          <span className="text-white">
-            HABIT<span className="text-[#00E676]">FC</span>
+    <>
+      <nav className="sticky top-0 z-40 bg-[#04060A]/95 backdrop-blur-md border-b border-[#1A2336]">
+        {/* Mobile: minimal top bar — logo + data buttons + reset */}
+        <div className="sm:hidden px-4 flex items-center justify-between h-12">
+          <span className="font-oswald text-lg font-bold tracking-wider">
+            <span className="text-[#00E676]">⚽</span>{' '}
+            <span className="text-white">HABIT<span className="text-[#00E676]">FC</span></span>
           </span>
-        </span>
-        <NavLink to="/" end className={linkClass}>Головна</NavLink>
-        <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
-        <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
-        <NavLink to="/team" className={linkClass}>Склад</NavLink>
-        <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
-        <div className="ml-auto flex items-center gap-1 shrink-0">
-          <button
-            onClick={handleExport}
-            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer hidden"
-            title="Експорт даних"
-          >
-            ⬇️
-          </button>
-          <button
-            onClick={handleImport}
-            className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer hidden"
-            title="Імпорт даних"
-          >
-            ⬆️
-          </button>
-          <button
-            onClick={handleReset}
-            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer hidden"
-            title="Скинути прогрес"
-          >
-            🔄
-          </button>
-          <button
-            onClick={() => signOut()}
-            className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
-            title="Вийти з акаунту"
-          >
-            🚪
-          </button>
+          <div className="flex items-center gap-1">
+            {/* <button
+              onClick={handleExport}
+              className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+              title="Експорт даних"
+            >
+              ⬇️
+            </button>
+            <button
+              onClick={handleImport}
+              className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+              title="Імпорт даних"
+            >
+              ⬆️
+            </button>
+            <button
+              onClick={handleReset}
+              className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+              title="Скинути прогрес"
+            >
+              🔄
+            </button> */}
+            <button
+              onClick={() => signOut()}
+              className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+              title="Вийти з акаунту"
+            >
+              🚪
+            </button>
+          </div>
         </div>
-      </div>
-    </nav>
+
+        {/* Desktop: full nav bar */}
+        <div className="hidden sm:flex max-w-7xl mx-auto px-4 items-center gap-1">
+          <span className="font-oswald text-xl font-bold mr-3 py-3 shrink-0 tracking-wider">
+            <span className="text-[#00E676]">⚽</span>{' '}
+            <span className="text-white">
+              HABIT<span className="text-[#00E676]">FC</span>
+            </span>
+          </span>
+          <NavLink to="/" end className={linkClass}>Головна</NavLink>
+          <NavLink to="/shop" className={linkClass}>Магазин</NavLink>
+          <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
+          <NavLink to="/team" className={linkClass}>Склад</NavLink>
+          <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
+          <NavLink to="/friends" className={linkClass}>Друзі</NavLink>
+          <div className="ml-auto flex items-center gap-1 shrink-0">
+            <button
+              onClick={handleExport}
+              className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer hidden"
+              title="Експорт даних"
+            >
+              ⬇️
+            </button>
+            <button
+              onClick={handleImport}
+              className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer hidden"
+              title="Імпорт даних"
+            >
+              ⬆️
+            </button>
+            <button
+              onClick={handleReset}
+              className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer hidden"
+              title="Скинути прогрес"
+            >
+              🔄
+            </button>
+            <button
+              onClick={() => setProfileOpen(true)}
+              className="p-2 text-[#5A7090] hover:text-[#00E676] transition-colors cursor-pointer"
+              title="Профіль"
+            >
+              <ProfileIcon />
+            </button>
+            <button
+              onClick={() => signOut()}
+              className="p-2 text-[#5A7090] hover:text-red-400 transition-colors cursor-pointer"
+              title="Вийти з акаунту"
+            >
+              🚪
+            </button>
+          </div>
+        </div>
+      </nav>
+      {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
+    </>
   )
 }
 
@@ -199,7 +226,7 @@ function ScrollToTop() {
 
 function BottomNav() {
   const { pathname } = useLocation()
-  if (pathname === '/open') return null
+  if (pathname === '/open' || pathname.startsWith('/profile/')) return null
 
   const tabClass = ({ isActive }: { isActive: boolean }) =>
     `flex flex-col items-center justify-center gap-1 flex-1 py-1.5 transition-colors ${
@@ -230,6 +257,10 @@ function BottomNav() {
           <TrophyIcon />
           <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Здобутки</span>
         </NavLink>
+        <NavLink to="/friends" className={tabClass}>
+          <FriendsIcon />
+          <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Друзі</span>
+        </NavLink>
       </div>
     </nav>
   )
@@ -255,6 +286,8 @@ export default function App() {
                   <Route path="/collection" element={<Collection />} />
                   <Route path="/team" element={<Team />} />
                   <Route path="/achievements" element={<Achievements />} />
+                  <Route path="/friends" element={<Friends />} />
+                  <Route path="/profile/:userId" element={<FriendProfile />} />
                 </Routes>
               </div>
               <BottomNav />
