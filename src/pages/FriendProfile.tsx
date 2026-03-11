@@ -118,6 +118,7 @@ export function FriendProfile() {
   const navigate = useNavigate()
 
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
   const [profile, setProfile] = useState<{
     username: string
     avatar_url: string | null
@@ -127,18 +128,34 @@ export function FriendProfile() {
 
   useEffect(() => {
     if (!userId) return
+    let cancelled = false
     fetchUserProfile(userId)
       .then(data => {
+        if (cancelled) return
         setProfile(data)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
+      .catch(() => {
+        if (cancelled) return
+        setError(true)
+        setLoading(false)
+      })
+    return () => { cancelled = true }
   }, [userId])
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <div className="text-[#5A7090] font-oswald tracking-widest">ЗАВАНТАЖЕННЯ...</div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <div className="text-[#5A7090] font-oswald tracking-wider">Помилка завантаження</div>
+        <button onClick={() => navigate(-1)} className="text-[#00E676] font-oswald text-sm">← Назад</button>
       </div>
     )
   }
@@ -153,7 +170,7 @@ export function FriendProfile() {
   }
 
   const { username, avatar_url, avatar_emoji, state } = profile
-  const squad = state.squad ?? Array(11).fill(null)
+  const squad = state.squad ?? Array<string | null>(11).fill(null)
   const formation = state.formation ?? '4-3-3'
   const collection = state.collection ?? {}
 
@@ -173,7 +190,7 @@ export function FriendProfile() {
       <div className="flex items-center gap-4 mb-8">
         <div className="w-16 h-16 rounded-full bg-[#0A0F1A] border border-[#1A2336] flex items-center justify-center overflow-hidden shrink-0">
           {avatar_url ? (
-            <img src={avatar_url} alt="avatar" className="w-full h-full object-cover" />
+            <img src={avatar_url} alt={username} className="w-full h-full object-cover" />
           ) : (
             <span className="text-3xl">{avatar_emoji ?? '👤'}</span>
           )}
