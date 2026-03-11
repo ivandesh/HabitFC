@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAppStore } from '../store/useAppStore'
 import { useAuthStore } from '../store/useAuthStore'
-import { scheduleSave } from '../lib/stateSync'
 import { searchUsers, fetchFollowingProfiles, type ProfileRow } from '../lib/profileSync'
 import { ProfileModal } from '../components/ui/ProfileModal'
 
@@ -53,7 +52,6 @@ export function Friends() {
   const following = useAppStore(state => state.following)
   const setFollowing = (ids: string[]) => {
     useAppStore.setState({ following: ids })
-    if (user) scheduleSave(user.id, useAppStore.getState())
   }
 
   const [query, setQuery] = useState('')
@@ -68,7 +66,7 @@ export function Friends() {
   useEffect(() => {
     if (initialLoadDone.current || following.length === 0) return
     initialLoadDone.current = true
-    fetchFollowingProfiles(following).then(setFollowingProfiles)
+    fetchFollowingProfiles(following).then(setFollowingProfiles).catch(() => {})
   }, [following])
 
   // Debounced search
@@ -83,6 +81,8 @@ export function Friends() {
       try {
         const results = await searchUsers(query, user.id)
         setSearchResults(results)
+      } catch {
+        setSearchResults([])
       } finally {
         setSearchLoading(false)
       }
