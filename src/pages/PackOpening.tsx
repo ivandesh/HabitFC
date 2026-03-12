@@ -219,12 +219,12 @@ function FlipCard({
     >
       {/* 3D flip wrapper */}
       <motion.div
-        style={{ transformStyle: 'preserve-3d', width: CARD_W, height: CARD_H }}
+        style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d', width: CARD_W, height: CARD_H }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.65, ease: [0.645, 0.045, 0.355, 1.0] }}
       >
         {/* Back face */}
-        <div style={{ backfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}>
+        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}>
           <CardBack packId={packId} />
         </div>
 
@@ -232,6 +232,7 @@ function FlipCard({
         <div
           style={{
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
             position: 'absolute',
             inset: 0,
