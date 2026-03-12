@@ -37,6 +37,7 @@ export function ProfileModal({ onClose }: Props) {
   const [usernameError, setUsernameError] = useState<string | null>(null)
   const [usernameLoading, setUsernameLoading] = useState(false)
   const [avatarLoading, setAvatarLoading] = useState(false)
+  const [avatarError, setAvatarError] = useState<string | null>(null)
   const fileRef = useRef<HTMLInputElement>(null)
 
   // Load current profile on mount
@@ -99,16 +100,24 @@ export function ProfileModal({ onClose }: Props) {
   async function handleUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !user) return
+    setAvatarError(null)
+    if (file.size > 10 * 1024 * 1024) {
+      setAvatarError('Файл занадто великий (макс. 10 МБ)')
+      e.target.value = ''
+      return
+    }
     setAvatarLoading(true)
     try {
       const url = await uploadAvatar(user.id, file)
       await saveAvatarUrl(user.id, url)
       setAvatarUrl(url)
       setAvatarEmoji(null)
-    } catch {
-      // silent failure — avatarLoading will clear in finally
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      setAvatarError(`Помилка: ${msg}`)
     } finally {
       setAvatarLoading(false)
+      e.target.value = ''
     }
   }
 
@@ -187,12 +196,15 @@ export function ProfileModal({ onClose }: Props) {
           {/* Upload button */}
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
           <button
-            onClick={() => fileRef.current?.click()}
+            onClick={() => { setAvatarError(null); fileRef.current?.click() }}
             disabled={avatarLoading}
             className="w-full py-2 border border-dashed border-[#1A2336] rounded-xl font-oswald text-xs text-[#5A7090] hover:border-[#00E676]/50 hover:text-[#00E676] transition-colors cursor-pointer disabled:opacity-50"
           >
             {avatarLoading ? 'Завантаження...' : '📷 Завантажити фото'}
           </button>
+          {avatarError && (
+            <p className="text-red-400 text-xs mt-1 break-all">{avatarError}</p>
+          )}
         </div>
 
         {/* Sign out */}
