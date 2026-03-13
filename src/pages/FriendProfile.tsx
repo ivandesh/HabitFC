@@ -213,7 +213,7 @@ export function FriendProfile() {
         <div className="font-oswald text-xs text-[#5A7090] uppercase tracking-widest mb-3">
           Склад · {FORMATIONS[formation]?.label ?? formation}
         </div>
-        <div className="max-w-[360px]">
+        <div className="max-w-md">
           <ReadOnlyPitch squad={squad} formation={formation} onSelect={setSelectedFootballer} />
         </div>
       </div>
