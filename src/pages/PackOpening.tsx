@@ -212,16 +212,24 @@ function FlipCard({
   return (
     <motion.div
       className="relative"
-      style={{ perspective: 1050, width: CARD_W, height: CARD_H, cursor: flipped ? 'default' : 'pointer' }}
+      style={{ perspective: 1050, WebkitPerspective: 1050, width: CARD_W, height: CARD_H, cursor: flipped ? 'default' : 'pointer' }}
       whileHover={!flipped ? { scale: 1.04 } : {}}
       transition={{ duration: 0.15 }}
       onClick={!flipped ? onClick : undefined}
     >
-      {/* 3D flip wrapper */}
-      <motion.div
-        style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d', width: CARD_W, height: CARD_H }}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.65, ease: [0.645, 0.045, 0.355, 1.0] }}
+      {/* 3D flip wrapper — CSS transition instead of Framer Motion so Safari compositor handles backface-visibility correctly */}
+      <div
+        style={{
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d',
+          width: CARD_W,
+          height: CARD_H,
+          transition: 'transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.0)',
+          WebkitTransition: '-webkit-transform 0.65s cubic-bezier(0.645, 0.045, 0.355, 1.0)',
+          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          WebkitTransform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          position: 'relative',
+        }}
       >
         {/* Back face */}
         <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}>
@@ -234,6 +242,7 @@ function FlipCard({
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
             transform: 'rotateY(180deg)',
+            WebkitTransform: 'rotateY(180deg)',
             position: 'absolute',
             inset: 0,
             overflow: 'hidden',
@@ -242,7 +251,7 @@ function FlipCard({
         >
           <FootballerCard footballer={footballer} />
         </div>
-      </motion.div>
+      </div>
 
       {/* Tap to reveal hint */}
       <AnimatePresence>
