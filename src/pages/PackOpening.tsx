@@ -7,11 +7,11 @@ import { FootballerCard } from '../components/cards/FootballerCard'
 import { CoachCard } from '../components/cards/CoachCard'
 import { CoinIcon } from '../components/ui/CoinIcon'
 import { playPackOpen, playCardSlide, playCardFlip } from '../lib/sounds'
-import { duplicateRefund } from '../lib/gacha'
+import { duplicateRefund, PITY_THRESHOLD, PITY_INCREMENT, PITY_CAP } from '../lib/gacha'
 import { coachPack } from '../data/coachPack'
 
 type LocationState =
-  | { type: 'footballer'; pack: Pack; cards: Footballer[]; nextPityCounter: number }
+  | { type: 'footballer'; pack: Pack; cards: Footballer[]; pityCounter: number; nextPityCounter: number }
   | { type: 'coach'; coach: Coach }
 
 type Phase = 'confirm' | 'opening' | 'revealing' | 'done'
@@ -352,7 +352,7 @@ function normalizeState(raw: unknown): LocationState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
   if (s.type === 'coach' && s.coach) return s as LocationState
-  if (s.pack && s.cards) return { type: 'footballer', nextPityCounter: 0, ...(s as object) } as LocationState
+  if (s.pack && s.cards) return { type: 'footballer', pityCounter: 0, nextPityCounter: 0, ...(s as object) } as LocationState
   return null
 }
 
@@ -513,7 +513,7 @@ export function PackOpening() {
     return <CoachPackOpening coach={locationState.coach} />
   }
 
-  const { pack, cards, nextPityCounter } = locationState
+  const { pack, cards, pityCounter, nextPityCounter } = locationState
   const theme = getTheme(pack.id)
 
   function startOpening() {
@@ -632,6 +632,37 @@ export function PackOpening() {
                       {pack.cost}
                     </span>
                   </p>
+
+                  {/* Pity indicator */}
+                  {(() => {
+                    const effectiveLegendary = Math.min(
+                      pack.weights.legendary + Math.max(0, pityCounter - PITY_THRESHOLD) * PITY_INCREMENT,
+                      PITY_CAP,
+                    )
+                    const isPityActive = pityCounter > PITY_THRESHOLD
+                    const maxBar = PITY_THRESHOLD + Math.ceil((PITY_CAP - pack.weights.legendary) / PITY_INCREMENT)
+                    const barFill = Math.min(pityCounter / maxBar, 1)
+                    return (
+                      <div className="flex flex-col items-center gap-1.5 w-48">
+                        <div className="w-full h-1 bg-gray-800 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all duration-500 ${isPityActive ? 'bg-yellow-400' : 'bg-gray-600'}`}
+                            style={{ width: `${barFill * 100}%` }}
+                          />
+                        </div>
+                        {isPityActive ? (
+                          <div className="text-xs text-yellow-400 font-oswald tracking-wider">
+                            🔥 Підвищений шанс: {effectiveLegendary}%
+                          </div>
+                        ) : (
+                          <div className="text-xs text-gray-500 font-oswald tracking-wider">
+                            Без легенди: {pityCounter} пакетів
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })()}
+
                   <div className="flex gap-3">
                     <button
                       onClick={() => navigate('/shop')}

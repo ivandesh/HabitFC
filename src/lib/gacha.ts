@@ -1,9 +1,9 @@
 import type { Footballer, Pack, Rarity } from '../types'
 import { footballers } from '../data/footballers'
 
-const PITY_THRESHOLD = 10   // packs without legendary before pity starts
-const PITY_INCREMENT = 2    // % added per pack beyond threshold
-const PITY_CAP = 50         // max legendary weight
+export const PITY_THRESHOLD = 2    // packs without legendary before pity starts
+export const PITY_INCREMENT = 2    // % added per pack beyond threshold
+export const PITY_CAP = 50         // max legendary weight
 
 function pickRarity(weights: Record<Rarity, number>, pityCounter: number): Rarity {
   const legendaryWeight = Math.min(

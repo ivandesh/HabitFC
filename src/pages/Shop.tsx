@@ -24,7 +24,7 @@ export function Shop() {
     if (!pack || coins < pack.cost) return
     const pityCounter = pityCounters[pack.id] ?? 0
     const { cards, nextPityCounter } = openPack(pack, pityCounter)
-    navigate('/open', { state: { pack, cards, nextPityCounter } })
+    navigate('/open', { state: { pack, cards, pityCounter, nextPityCounter } })
   }
 
   return (
