@@ -4,7 +4,8 @@ import { fetchUserProfile } from '../lib/profileSync'
 import { footballers } from '../data/footballers'
 import { FORMATIONS } from '../lib/formations'
 import { FootballerCard } from '../components/cards/FootballerCard'
-import type { AppState, Position } from '../types'
+import { FootballerModal } from '../components/cards/FootballerModal'
+import type { AppState, Position, Footballer } from '../types'
 
 // ── Pitch helpers (duplicated from Team.tsx — not exported there) ─────────────
 
@@ -68,7 +69,7 @@ function PitchSVG() {
 
 // ── Read-only pitch ────────────────────────────────────────────────────────────
 
-function ReadOnlyPitch({ squad, formation }: { squad: AppState['squad']; formation: string }) {
+function ReadOnlyPitch({ squad, formation, onSelect }: { squad: AppState['squad']; formation: string; onSelect: (f: Footballer) => void }) {
   const formationDef = FORMATIONS[formation] ?? FORMATIONS['4-3-3']
   const SLOTS = formationDef.slots
 
@@ -88,7 +89,10 @@ function ReadOnlyPitch({ squad, formation }: { squad: AppState['squad']; formati
             style={{ left: `${slot.x}%`, top: `${slot.y}%` }}
           >
             {footballer ? (
-              <div className="flex flex-col items-center gap-0.5">
+              <button
+                className="flex flex-col items-center gap-0.5 cursor-pointer active:scale-95 transition-transform"
+                onClick={() => onSelect(footballer)}
+              >
                 <div className={`relative w-10 h-10 sm:w-16 sm:h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] ${rarityRing[footballer.rarity]}`}>
                   <PlayerPhoto footballer={footballer} />
                 </div>
@@ -98,7 +102,7 @@ function ReadOnlyPitch({ squad, formation }: { squad: AppState['squad']; formati
                 <div className="text-[9px] sm:text-[11px] font-oswald font-bold text-[#00E676] leading-none drop-shadow">
                   {playerOverall(footballer)}
                 </div>
-              </div>
+              </button>
             ) : (
               <div className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full border-2 border-dashed flex items-center justify-center bg-black/25 ${emptyBorder[slot.pos]}`}>
                 <span className="text-[8px] sm:text-xs font-oswald font-bold">{POS_UA[slot.pos]}</span>
@@ -119,6 +123,7 @@ export function FriendProfile() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [selectedFootballer, setSelectedFootballer] = useState<Footballer | null>(null)
   const [profile, setProfile] = useState<{
     username: string
     avatar_url: string | null
@@ -209,7 +214,7 @@ export function FriendProfile() {
           Склад · {FORMATIONS[formation]?.label ?? formation}
         </div>
         <div className="max-w-[360px]">
-          <ReadOnlyPitch squad={squad} formation={formation} />
+          <ReadOnlyPitch squad={squad} formation={formation} onSelect={setSelectedFootballer} />
         </div>
       </div>
 
@@ -223,11 +228,21 @@ export function FriendProfile() {
         ) : (
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2">
             {ownedFootballers.map(f => (
-              <FootballerCard key={f.id} footballer={f} owned={collection[f.id]} mini />
+              <button key={f.id} onClick={() => setSelectedFootballer(f)} className="text-left cursor-pointer">
+                <FootballerCard footballer={f} owned={collection[f.id]} mini />
+              </button>
             ))}
           </div>
         )}
       </div>
+
+      {selectedFootballer && (
+        <FootballerModal
+          footballer={selectedFootballer}
+          owned={collection[selectedFootballer.id] ?? 0}
+          onClose={() => setSelectedFootballer(null)}
+        />
+      )}
     </div>
   )
 }
