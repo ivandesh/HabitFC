@@ -282,7 +282,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'siiiiu',
     titleUA: 'СІІІУУ!',
-    descUA: 'Отримай Роналду. Він вже святкує.',
+    descUA: 'Виятгнув Роналду. СІІІУУ!!!',
     category: 'memes',
     icon: '🎤',
     coinReward: 10,
@@ -291,7 +291,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'goat_card',
     titleUA: 'Козел',
-    descUA: 'Отримай Мессі. G.O.A.T. у кишені.',
+    descUA: 'Виятгнув Мессі. G.O.A.T. у кишені.',
     category: 'memes',
     icon: '🐐',
     coinReward: 10,
@@ -300,7 +300,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'cyborg',
     titleUA: 'Кіборг',
-    descUA: 'Отримай Голанда. Він не людина.',
+    descUA: 'Виятгнув Голанда. Він не людина.',
     category: 'memes',
     icon: '🤖',
     coinReward: 10,
@@ -309,7 +309,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'still_running',
     titleUA: 'Ще бігає?!',
-    descUA: 'Отримай Модріча. Він невмирущий.',
+    descUA: 'Виятгнув Модріча. Він невмирущий.',
     category: 'memes',
     icon: '👴',
     coinReward: 10,
@@ -318,7 +318,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'samba_time',
     titleUA: 'Самба Тайм',
-    descUA: 'Отримай Вініcіуса. Він вже танцює.',
+    descUA: 'Виятгнув Вініcіуса. Будете разом танцювати.',
     category: 'memes',
     icon: '💃',
     coinReward: 10,
@@ -327,7 +327,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'sweeper_keeper',
     titleUA: 'Польовий Воротар',
-    descUA: 'Отримай Нойєра. Він впевнений, що він захисник.',
+    descUA: 'Виятгнув Нойєра. Він впевнений, що він захисник.',
     category: 'memes',
     icon: '🧤',
     coinReward: 10,
@@ -336,7 +336,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'nine_minutes',
     titleUA: '5 за 9 хвилин',
-    descUA: 'Отримай Левандовського. Знову 5 голів?',
+    descUA: 'Виятгнув Левандовського. Знову 5 голів?',
     category: 'memes',
     icon: '⚡',
     coinReward: 10,
@@ -345,7 +345,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'too_young',
     titleUA: 'Занадто Молодий',
-    descUA: 'Отримай Ямала. Він молодший за тебе. І він вже чемпіон Європи.',
+    descUA: 'Виятгнув Ямала. Він молодший за тебе. І він вже чемпіон Європи.',
     category: 'memes',
     icon: '🍼',
     coinReward: 10,
@@ -354,7 +354,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'fragile_genius',
     titleUA: 'Крихкий Геній',
-    descUA: 'Отримай Педрі. Найталановитіший гравець покоління. Фізіотерапевт Барселони знає його краще за тренера.',
+    descUA: 'Виятгнув Педрі. Найталановитіший гравець покоління. Фізіотерапевт Барселони знає його краще за тренера.',
     category: 'memes',
     icon: '🩹',
     coinReward: 10,
@@ -363,7 +363,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'mentality_monster',
     titleUA: 'Менталітет',
-    descUA: 'Отримай Кіммiха. Менталітет. Характер. Воля до перемоги.',
+    descUA: 'Виятгнув Кіммiха. Менталітет. Характер. Воля до перемоги.',
     category: 'memes',
     icon: '🧠',
     coinReward: 10,
@@ -372,7 +372,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'wall_of_milan',
     titleUA: 'Стіна Мілану',
-    descUA: 'Отримай Доннаруму. 1.96 метра чистого жаху. Нападники підходять до штрафної і просто плачуть.',
+    descUA: 'Виятгнув Доннаруму. 1.96 метра чистого жаху.',
     category: 'memes',
     icon: '🏔️',
     coinReward: 10,
@@ -381,7 +381,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'arteta_invention',
     titleUA: 'Винахід Артети',
-    descUA: 'Отримай Зінченка. Артета вигадав для нього нову позицію: лівий центральний атакуючий захисний півзахисник.',
+    descUA: 'Виятгнув Зінченка. Шкода що грає він тепер хіба в фіфашку',
     category: 'memes',
     icon: '🧩',
     coinReward: 10,
@@ -390,7 +390,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'everton_survivor',
     titleUA: 'Евертон Сюрвайвор',
-    descUA: 'Отримай Миколенка. Грати в Евертоні та залишатися психічно здоровим — це вже досягнення.',
+    descUA: 'Виятгнув Миколенка. Грати в Евертоні та залишатися психічно здоровим — це вже досягнення.',
     category: 'memes',
     icon: '⚓',
     coinReward: 10,
@@ -408,7 +408,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'hospital_vip',
     titleUA: 'VIP Палата',
-    descUA: 'Отримай Неймара. Він не грає. Він ніколи не грає. Але картка красива.',
+    descUA: 'Виятгнув Неймара. Він не грає. Він ніколи не грає. Але картка красива.',
     category: 'memes',
     icon: '🏥',
     coinReward: 10,
@@ -441,7 +441,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: 'special_one',
     titleUA: 'Особливий',
-    descUA: 'Призначив Моурінью. Він вже проводить прес-конференцію.',
+    descUA: 'Ай ем Жозе Моуріньйо',
     category: 'memes',
     icon: '😏',
     coinReward: 10,

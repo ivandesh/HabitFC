@@ -464,7 +464,7 @@ export function Team() {
                 )}
 
                 {/* Player picker */}
-                {panelMode === 'pick' && activeSlot !== null && (
+                {(panelMode === 'pick' || panelMode === 'stats') && activeSlot !== null && (
                   <div className="p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div>
@@ -508,6 +508,8 @@ export function Team() {
                               <div className="text-[10px] font-bold text-center leading-tight text-white/90 w-full truncate">
                                 {f.name.split(' ').slice(-1)[0]}
                               </div>
+                              <div className="text-xs text-center text-[#5A7090]">{f.club}</div>
+                              <div className="text-xs text-center text-[#5A7090]">{f.nationality}</div>
                               <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
                             </button>
                           )
