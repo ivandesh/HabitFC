@@ -7,7 +7,8 @@ import { StreakBadge } from '../ui/StreakBadge'
 import { CoinIcon } from '../ui/CoinIcon'
 import { isCompletedToday, isStreakActive, calculateNewStreak, streakMultiplier } from '../../lib/streaks'
 import { computeActiveBonuses, totalBonusPercent } from '../../lib/bonuses'
-import { computeCoachHabitBonus } from '../../lib/coachPerks'
+import { computeCoachHabitBonus, computeCoachChemistryPct, getAssignedCoach } from '../../lib/coachPerks'
+import { footballers } from '../../data/footballers'
 import { playHabitComplete } from '../../lib/sounds'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
@@ -58,7 +59,14 @@ export function HabitCard({ habit, onEdit }: Props) {
   const newStreak = calculateNewStreak(habit.streak, habit.lastCompleted)
   const streakMult = streakMultiplier(newStreak)
   const afterStreak = Math.round(habit.coinValue * streakMult)
-  const chemistryPct = totalBonusPercent(computeActiveBonuses(partialState as Parameters<typeof computeActiveBonuses>[0]))
+  const squadChemPct = totalBonusPercent(computeActiveBonuses(partialState as Parameters<typeof computeActiveBonuses>[0]))
+  const coach = getAssignedCoach(partialState as Parameters<typeof getAssignedCoach>[0])
+  const squadPlayers = (squad ?? [])
+    .filter((id): id is string => id !== null)
+    .map(id => footballers.find(f => f.id === id))
+    .filter((f): f is typeof footballers[0] => f !== undefined)
+  const coachChemPct = coach ? computeCoachChemistryPct(coach, squadPlayers) : 0
+  const chemistryPct = squadChemPct + coachChemPct
   const withChemistry = Math.round(afterStreak * (1 + chemistryPct / 100))
   const chemistryBonus = withChemistry - afterStreak
   const coachBonus = computeCoachHabitBonus(partialState as Parameters<typeof computeCoachHabitBonus>[0], habit.id, withChemistry, newStreak)

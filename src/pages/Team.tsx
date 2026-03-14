@@ -244,7 +244,7 @@ export function Team() {
         </div>
         <div className="flex-1 bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-2 sm:px-4 py-2 sm:py-3 flex flex-col sm:flex-row items-center sm:items-center gap-0.5 sm:gap-3">
           <div className="font-oswald text-xl sm:text-3xl font-bold text-[#FBBF24]">
-            {bonusPct > 0 ? `+${bonusPct}%` : '—'}
+            {(bonusPct + coachChemPct) > 0 ? `+${bonusPct + coachChemPct}%` : '—'}
           </div>
           <div className="text-center sm:text-left">
             <div className="hidden sm:block text-[10px] text-[#5A7090] uppercase tracking-wider">Хімія</div>

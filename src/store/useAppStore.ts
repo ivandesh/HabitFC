@@ -3,9 +3,10 @@ import type { Habit, Footballer, AppState } from '../types'
 import { scheduleSave, flushSave } from '../lib/stateSync'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
+import { footballers } from '../data/footballers'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import { checkAchievements, ACHIEVEMENTS } from '../lib/achievements'
-import { computeCoachHabitBonus } from '../lib/coachPerks'
+import { computeCoachHabitBonus, computeCoachChemistryPct, getAssignedCoach } from '../lib/coachPerks'
 
 interface AppStore extends AppState {
   // Habit actions
@@ -87,7 +88,13 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           const baseCoin = Math.round(habit.coinValue * multiplier)
           const bonuses = computeActiveBonuses(state)
           const bonusPct = totalBonusPercent(bonuses)
-          const earned = Math.round(baseCoin * (1 + bonusPct / 100))
+          const coach = getAssignedCoach(state)
+          const squadPlayers = (state.squad ?? [])
+            .filter((id): id is string => id !== null)
+            .map(id => footballers.find(f => f.id === id))
+            .filter((f): f is Footballer => f !== undefined)
+          const coachChemPct = coach ? computeCoachChemistryPct(coach, squadPlayers) : 0
+          const earned = Math.round(baseCoin * (1 + (bonusPct + coachChemPct) / 100))
           const coachBonus = computeCoachHabitBonus(state, id, earned, newStreak)
           const total = earned + coachBonus
 
