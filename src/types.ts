@@ -92,3 +92,60 @@ export interface CoachPackDef {
   cost: number
   emoji: string
 }
+
+// ─── Battle System ──────────────────────────────────────────────────────────
+
+export interface SquadSnapshot {
+  squad: string[]           // 11 footballer IDs
+  formation: string
+  coachId: string
+  coachLevel: number
+  maxHabitStreak: number
+}
+
+export type ChallengeStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
+
+export interface Challenge {
+  id: string
+  challengerId: string
+  challengedId: string
+  status: ChallengeStatus
+  challengerSquad: SquadSnapshot
+  createdAt: string
+  expiresAt: string
+}
+
+export type MatchEventType =
+  | 'goal'
+  | 'yellow_card'
+  | 'red_card'
+  | 'near_miss'
+  | 'great_save'
+  | 'on_fire'
+  | 'momentum_shift'
+
+export interface MatchEvent {
+  minute: number
+  type: MatchEventType
+  team: 'home' | 'away'
+  playerId: string
+  description: string
+}
+
+export type MatchResult = 'home_win' | 'away_win' | 'draw'
+
+export interface Match {
+  id: string
+  challengeId: string
+  challengerId: string
+  challengedId: string
+  challengerSquad: SquadSnapshot
+  challengedSquad: SquadSnapshot
+  matchSeed: string
+  events: MatchEvent[]
+  scoreHome: number
+  scoreAway: number
+  result: MatchResult
+  coinsAwardedTo: string[]   // array of user IDs who received coins (can be both on draw)
+  playedAt: string
+}
