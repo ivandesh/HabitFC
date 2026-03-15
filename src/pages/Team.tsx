@@ -8,6 +8,7 @@ import type { AppState, Position, Footballer } from '../types'
 import { coaches as allCoaches } from '../data/coaches'
 import { computeCoachChemistryPct, getCoachLevel, applyCoachStatBoost } from '../lib/coachPerks'
 import { CoachCard } from '../components/cards/CoachCard'
+import type { FormationSlot } from '../lib/formations'
 
 const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
 
@@ -67,6 +68,77 @@ function PitchSVG() {
       <path d="M 100 324 A 50 50 0 0 1 200 324" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
     </svg>
   )
+}
+
+interface ChemLink {
+  from: number
+  to: number
+  type: 'club' | 'nation' | 'both'
+  label: string
+}
+
+function getChemistryLinks(
+  squad: (string | null)[],
+  slots: FormationSlot[]
+): ChemLink[] {
+  const links: ChemLink[] = []
+  const players = squad.map(id => id ? footballers.find(f => f.id === id) ?? null : null)
+
+  for (let i = 0; i < players.length; i++) {
+    for (let j = i + 1; j < players.length; j++) {
+      const a = players[i]
+      const b = players[j]
+      if (!a || !b) continue
+      const sameClub = a.club === b.club
+      const sameNat = a.nationality === b.nationality
+      if (sameClub && sameNat) {
+        links.push({ from: i, to: j, type: 'both', label: `${a.club} · ${a.nationality}` })
+      } else if (sameClub) {
+        links.push({ from: i, to: j, type: 'club', label: a.club })
+      } else if (sameNat) {
+        links.push({ from: i, to: j, type: 'nation', label: a.nationality })
+      }
+    }
+  }
+  return links
+}
+
+function ChemistryLines({ links, slots }: { links: ChemLink[]; slots: FormationSlot[] }) {
+  if (links.length === 0) return null
+  return (
+    <svg className="absolute inset-0 w-full h-full pointer-events-none z-[5]" viewBox="0 0 100 100" preserveAspectRatio="none">
+      {links.map((link, i) => {
+        const fromSlot = slots[link.from]
+        const toSlot = slots[link.to]
+        const color = link.type === 'both' ? '#E879F9' : link.type === 'club' ? '#00E676' : '#FBBF24'
+        return (
+          <line
+            key={i}
+            x1={fromSlot.x} y1={fromSlot.y}
+            x2={toSlot.x} y2={toSlot.y}
+            stroke={color} strokeWidth="0.6" strokeOpacity="0.5"
+            strokeDasharray="1.5 1"
+          />
+        )
+      })}
+    </svg>
+  )
+}
+
+function computeChemistryDelta(
+  currentSquad: (string | null)[],
+  slotIndex: number,
+  candidateId: string
+): number {
+  const currentPct = totalBonusPercent(
+    computeActiveBonuses({ squad: currentSquad } as AppState)
+  )
+  const newSquad = [...currentSquad]
+  newSquad[slotIndex] = candidateId
+  const newPct = totalBonusPercent(
+    computeActiveBonuses({ squad: newSquad } as AppState)
+  )
+  return newPct - currentPct
 }
 
 function PlayerPhoto({ footballer }: { footballer: typeof footballers[0] }) {
@@ -139,6 +211,8 @@ export function Team() {
   function boostedFootballer(f: Footballer) {
     return applyCoachStatBoost(f, { assignedCoach, coachCollection } as AppState)
   }
+
+  const chemLinks = useMemo(() => getChemistryLinks(squad, SLOTS), [squad, SLOTS])
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
@@ -343,6 +417,7 @@ export function Team() {
             }}
           >
             <PitchSVG />
+            <ChemistryLines links={chemLinks} slots={SLOTS} />
             {SLOTS.map((slot, idx) => {
               const footballerId = squad[idx] ?? null
               const footballer = footballerId ? footballers.find(f => f.id === footballerId) ?? null : null
@@ -398,6 +473,29 @@ export function Team() {
               )
             })}
           </div>
+          {/* Chemistry lines legend */}
+          {chemLinks.length > 0 && (
+            <div className="flex justify-center gap-4 mt-2 text-[10px]">
+              {chemLinks.some(l => l.type === 'club') && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-0 border-t-2 border-dashed border-[#00E676]/60" />
+                  <span className="text-[#5A7090] font-oswald">Клуб</span>
+                </div>
+              )}
+              {chemLinks.some(l => l.type === 'nation') && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-0 border-t-2 border-dashed border-[#FBBF24]/60" />
+                  <span className="text-[#5A7090] font-oswald">Нація</span>
+                </div>
+              )}
+              {chemLinks.some(l => l.type === 'both') && (
+                <div className="flex items-center gap-1.5">
+                  <div className="w-4 h-0 border-t-2 border-dashed border-[#E879F9]/60" />
+                  <span className="text-[#5A7090] font-oswald">Клуб + Нація</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Right panel — desktop: right column; mobile: fixed bottom sheet when active */}
@@ -491,17 +589,27 @@ export function Team() {
                         {pickerPlayers.map(f => {
                           const inSquad = squad.includes(f.id)
                           const overall = playerOverall(f)
+                          const chemDelta = !inSquad && activeSlot !== null
+                            ? computeChemistryDelta(squad, activeSlot, f.id)
+                            : 0
                           return (
                             <button
                               key={f.id}
                               disabled={inSquad}
                               onClick={() => handleSelectPlayer(f.id)}
-                              className={`flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
+                              className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
                                 inSquad
                                   ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
-                                  : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
+                                  : chemDelta > 0
+                                    ? 'border-[#FBBF24]/40 bg-[#FBBF24]/5 hover:border-[#FBBF24]/70 hover:bg-[#FBBF24]/10 cursor-pointer active:scale-95'
+                                    : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
                               }`}
                             >
+                              {chemDelta > 0 && (
+                                <div className="absolute -top-1.5 -right-1.5 bg-[#FBBF24] text-[#04060A] text-[9px] font-oswald font-bold px-1.5 py-0.5 rounded-full leading-none z-10">
+                                  +{chemDelta}%
+                                </div>
+                              )}
                               <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
                                 <PlayerPhoto footballer={f} />
                               </div>
