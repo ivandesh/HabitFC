@@ -218,9 +218,8 @@ function PitchPlayerDot({
     >
       {/* Player circle with photo */}
       <div
-        className="relative rounded-full overflow-hidden"
+        className="relative rounded-full overflow-hidden w-[22px] h-[22px] sm:w-[36px] sm:h-[36px]"
         style={{
-          width: 22, height: 22,
           border: `2px solid ${borderColor}`,
           background: '#0A0F1A',
           boxShadow: isSentOff
@@ -238,7 +237,7 @@ function PitchPlayerDot({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[8px]">
+          <div className="w-full h-full flex items-center justify-center text-[8px] sm:text-xs">
             {player.footballer?.emoji ?? '⚽'}
           </div>
         )}
@@ -246,9 +245,9 @@ function PitchPlayerDot({
 
       {/* Player name */}
       <div
-        className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap font-oswald text-[7px] tracking-wide"
+        className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap font-oswald text-[7px] sm:text-[10px] tracking-wide"
         style={{
-          top: 24,
+          top: 'calc(100% + 2px)',
           color: isSentOff ? 'rgba(255,100,100,0.5)' : 'rgba(255,255,255,0.6)',
           textShadow: '0 1px 3px rgba(0,0,0,0.8)',
           textDecoration: isSentOff ? 'line-through' : 'none',
@@ -262,20 +261,20 @@ function PitchPlayerDot({
         <div
           className="absolute flex gap-0.5"
           style={{
-            left: 20,
+            left: '100%',
             top: -2,
           }}
         >
           {hasGoal && (
             <div className="flex items-center" style={{ fontSize: 8, lineHeight: 1 }}>
-              <span>⚽</span>
+              <span className="text-[8px] sm:text-[12px]">⚽</span>
               {stats!.goals > 1 && (
-                <span className="text-white font-bold" style={{ fontSize: 7 }}>×{stats!.goals}</span>
+                <span className="text-white font-bold text-[7px] sm:text-[10px]">×{stats!.goals}</span>
               )}
             </div>
           )}
-          {hasYellow && !hasRed && <span style={{ fontSize: 8 }}>🟨</span>}
-          {hasRed && <span style={{ fontSize: 8 }}>🟥</span>}
+          {hasYellow && !hasRed && <span className="text-[8px] sm:text-[12px]">🟨</span>}
+          {hasRed && <span className="text-[8px] sm:text-[12px]">🟥</span>}
         </div>
       )}
     </div>
