@@ -225,7 +225,7 @@ function PitchPlayerDot({
       >
         {player.footballer?.photoUrl ? (
           <img
-            src={player.footballer.photoUrl}
+            src={`${import.meta.env.BASE_URL}${player.footballer.photoUrl.replace(/^\//, '')}`}
             alt=""
             className="w-full h-full object-cover"
           />
@@ -469,7 +469,7 @@ function PostMatchLineup({
               {/* Photo */}
               <div className="w-7 h-7 rounded-full overflow-hidden bg-[#1A2336] border border-[#2A3346] shrink-0">
                 {player.photoUrl ? (
-                  <img src={player.photoUrl} alt="" className="w-full h-full object-cover" />
+                  <img src={`${import.meta.env.BASE_URL}${player.photoUrl.replace(/^\//, '')}`} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs">
                     {player.emoji}
