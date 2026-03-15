@@ -47,6 +47,7 @@ export function Friends() {
   const [activeMatchNames, setActiveMatchNames] = useState<{ home: string; away: string }>({
     home: '', away: '',
   })
+  const [viewerTeam, setViewerTeam] = useState<'home' | 'away'>('home')
 
   // Load following profiles once
   useEffect(() => {
@@ -116,6 +117,7 @@ export function Friends() {
         home: challengerProfile?.username ?? 'Суперник',
         away: 'Ви',
       })
+      setViewerTeam('away')
       setActiveMatch(match)
     } catch {
       alert('Помилка прийняття виклику')
@@ -131,6 +133,7 @@ export function Friends() {
       home: match.challengerId === user?.id ? 'Ви' : (opponentProfile?.username ?? 'Суперник'),
       away: match.challengedId === user?.id ? 'Ви' : (opponentProfile?.username ?? 'Суперник'),
     })
+    setViewerTeam(match.challengerId === user?.id ? 'home' : 'away')
     setActiveMatch(match)
   }
 
@@ -150,6 +153,7 @@ export function Friends() {
         match={activeMatch}
         homeName={activeMatchNames.home}
         awayName={activeMatchNames.away}
+        viewerTeam={viewerTeam}
         onFinish={handleMatchFinish}
       />
     )
@@ -285,6 +289,7 @@ export function Friends() {
                       home: isHome ? 'Ви' : (opponent?.username ?? 'Суперник'),
                       away: isHome ? (opponent?.username ?? 'Суперник') : 'Ви',
                     })
+                    setViewerTeam(isHome ? 'home' : 'away')
                     setActiveMatch(match)
                   }}
                   className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl cursor-pointer hover:border-[#00E676]/20 transition-colors"

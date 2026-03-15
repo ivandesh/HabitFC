@@ -28,10 +28,11 @@ interface Props {
   match: Match
   homeName: string
   awayName: string
+  viewerTeam: 'home' | 'away'
   onFinish: () => void
 }
 
-export function MatchLive({ match, homeName, awayName, onFinish }: Props) {
+export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: Props) {
   const [currentMinute, setCurrentMinute] = useState(0)
   const [visibleEvents, setVisibleEvents] = useState<MatchEvent[]>([])
   const [scoreHome, setScoreHome] = useState(0)
@@ -40,49 +41,47 @@ export function MatchLive({ match, homeName, awayName, onFinish }: Props) {
   const [isHalfTime, setIsHalfTime] = useState(false)
   const eventsEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
+  const lastProcessedMinute = useRef(0)
 
   const tick = useCallback(() => {
-    setCurrentMinute(prev => {
-      const next = prev + 1
-      if (next > 90) {
-        playFinalWhistle()
-        setIsFinished(true)
-        return 90
-      }
+    setCurrentMinute(prev => Math.min(prev + 1, 91))
+  }, [])
 
-      // Check for events at this minute
-      const minuteEvents = match.events.filter(e => e.minute === next)
+  // Process events as a side effect of minute changes — runs once per minute
+  useEffect(() => {
+    if (currentMinute === 0 || currentMinute <= lastProcessedMinute.current) return
+    lastProcessedMinute.current = currentMinute
 
-      if (minuteEvents.length > 0) {
-        setVisibleEvents(ve => [...ve, ...minuteEvents])
+    if (currentMinute > 90) {
+      playFinalWhistle()
+      setIsFinished(true)
+      return
+    }
 
-        for (const ev of minuteEvents) {
-          // Play sound
-          SOUND_MAP[ev.type]?.()
-          // Update score
-          if (ev.type === 'goal') {
-            if (ev.team === 'home') setScoreHome(s => s + 1)
-            else setScoreAway(s => s + 1)
-          }
+    const minuteEvents = match.events.filter(e => e.minute === currentMinute)
+    if (minuteEvents.length > 0) {
+      setVisibleEvents(ve => [...ve, ...minuteEvents])
+      for (const ev of minuteEvents) {
+        SOUND_MAP[ev.type]?.()
+        if (ev.type === 'goal') {
+          if (ev.team === 'home') setScoreHome(s => s + 1)
+          else setScoreAway(s => s + 1)
         }
       }
+    }
 
-      // Half-time pause at 45
-      if (next === 45) {
-        setIsHalfTime(true)
-        setTimeout(() => setIsHalfTime(false), 1500)
-      }
-
-      return next
-    })
-  }, [match.events])
+    if (currentMinute === 45) {
+      setIsHalfTime(true)
+      setTimeout(() => setIsHalfTime(false), 1500)
+    }
+  }, [currentMinute, match.events])
 
   useEffect(() => {
-    if (isFinished || isHalfTime) return
+    if (isFinished || isHalfTime || currentMinute > 90) return
 
     // Variable speed: faster when nothing happens
     const hasEvent = match.events.some(e => e.minute === currentMinute + 1)
-    const delay = hasEvent ? 800 : 250  // pause on events, fast otherwise
+    const delay = hasEvent ? 800 : 250
 
     timerRef.current = setTimeout(tick, delay)
     return () => clearTimeout(timerRef.current)
@@ -93,13 +92,14 @@ export function MatchLive({ match, homeName, awayName, onFinish }: Props) {
     eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [visibleEvents])
 
-  const resultLabel =
-    match.result === 'home_win' ? 'ПЕРЕМОГА' :
-    match.result === 'away_win' ? 'ПОРАЗКА' : 'НІЧИЯ'
+  // Determine result from the viewer's perspective
+  const viewerWon = (viewerTeam === 'home' && match.result === 'home_win') ||
+    (viewerTeam === 'away' && match.result === 'away_win')
+  const viewerLost = (viewerTeam === 'home' && match.result === 'away_win') ||
+    (viewerTeam === 'away' && match.result === 'home_win')
 
-  const resultColor =
-    match.result === 'home_win' ? 'text-[#00E676]' :
-    match.result === 'away_win' ? 'text-red-400' : 'text-yellow-400'
+  const resultLabel = viewerWon ? 'ПЕРЕМОГА' : viewerLost ? 'ПОРАЗКА' : 'НІЧИЯ'
+  const resultColor = viewerWon ? 'text-[#00E676]' : viewerLost ? 'text-red-400' : 'text-yellow-400'
 
   return (
     <div className="max-w-lg mx-auto px-4 py-6">
