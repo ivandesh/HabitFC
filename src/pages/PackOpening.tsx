@@ -231,12 +231,19 @@ function FlipCard({
           position: 'relative',
         }}
       >
-        {/* Back face */}
-        <div style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', position: 'absolute', inset: 0 }}>
+        {/* Back face — hidden after flip via visibility (iOS Safari ignores backface-visibility) */}
+        <div style={{
+          backfaceVisibility: 'hidden',
+          WebkitBackfaceVisibility: 'hidden',
+          position: 'absolute',
+          inset: 0,
+          visibility: flipped ? 'hidden' : 'visible',
+          transition: 'visibility 0s 0.325s',
+        }}>
           <CardBack packId={packId} />
         </div>
 
-        {/* Front face */}
+        {/* Front face — hidden before flip via visibility (iOS Safari ignores backface-visibility) */}
         <div
           style={{
             backfaceVisibility: 'hidden',
@@ -247,6 +254,8 @@ function FlipCard({
             inset: 0,
             overflow: 'hidden',
             borderRadius: '1rem',
+            visibility: flipped ? 'visible' : 'hidden',
+            transition: 'visibility 0s 0.325s',
           }}
         >
           <FootballerCard footballer={footballer} />
