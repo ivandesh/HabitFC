@@ -1,9 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { CoinIcon } from '../ui/CoinIcon'
+import { EmojiPicker } from '../ui/EmojiPicker'
 import type { Habit } from '../../types'
-
-const ICONS = ['🧘', '🎸', '📚', '🏃', '💪', '🧠', '✍️', '🥗', '💧', '🎨', '🎯', '🌿', '🏊', '🚴', '🎵', '📖', '🛏️', '🧹']
 
 interface Props {
   habit: Habit
@@ -30,18 +29,7 @@ export function EditHabitModal({ habit, onClose }: Props) {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm text-gray-400 mb-2">Іконка</label>
-            <div className="flex flex-wrap gap-2">
-              {ICONS.map(i => (
-                <button
-                  key={i}
-                  type="button"
-                  onClick={() => setIcon(i)}
-                  className={`text-2xl p-2 rounded-lg transition-all ${icon === i ? 'bg-blue-600 scale-110' : 'bg-gray-800 hover:bg-gray-700'}`}
-                >
-                  {i}
-                </button>
-              ))}
-            </div>
+            <EmojiPicker value={icon} onChange={setIcon} />
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Назва звички</label>
