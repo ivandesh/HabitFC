@@ -196,10 +196,13 @@ function PitchPlayerDot({
   const hasYellow = showBadges && stats && stats.yellowCards > 0
   const hasRed = showBadges && stats && stats.redCards > 0
   const isOnFire = showBadges && stats?.onFire
+  const isSentOff = !!(stats && stats.redCards > 0)
 
-  const borderColor = player.team === 'home'
-    ? 'rgba(0,230,118,0.7)'
-    : 'rgba(255,107,107,0.7)'
+  const borderColor = isSentOff
+    ? 'rgba(100,100,100,0.5)'
+    : player.team === 'home'
+      ? 'rgba(0,230,118,0.7)'
+      : 'rgba(255,107,107,0.7)'
 
   return (
     <div
@@ -209,6 +212,8 @@ function PitchPlayerDot({
         top: `${player.y}%`,
         transform: 'translate(-50%, -50%)',
         zIndex: 10,
+        opacity: isSentOff ? 0.35 : 1,
+        transition: 'opacity 0.5s ease',
       }}
     >
       {/* Player circle with photo */}
@@ -218,9 +223,12 @@ function PitchPlayerDot({
           width: 22, height: 22,
           border: `2px solid ${borderColor}`,
           background: '#0A0F1A',
-          boxShadow: isOnFire
-            ? '0 0 8px rgba(255,140,0,0.7), 0 0 3px rgba(255,140,0,0.4)'
-            : `0 0 4px ${borderColor}`,
+          boxShadow: isSentOff
+            ? 'none'
+            : isOnFire
+              ? '0 0 8px rgba(255,140,0,0.7), 0 0 3px rgba(255,140,0,0.4)'
+              : `0 0 4px ${borderColor}`,
+          filter: isSentOff ? 'grayscale(1)' : 'none',
         }}
       >
         {player.footballer?.photoUrl ? (
@@ -241,8 +249,9 @@ function PitchPlayerDot({
         className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap font-oswald text-[7px] tracking-wide"
         style={{
           top: 24,
-          color: 'rgba(255,255,255,0.6)',
+          color: isSentOff ? 'rgba(255,100,100,0.5)' : 'rgba(255,255,255,0.6)',
           textShadow: '0 1px 3px rgba(0,0,0,0.8)',
+          textDecoration: isSentOff ? 'line-through' : 'none',
         }}
       >
         {player.footballer ? getLastName(player.footballer.name) : ''}
@@ -265,7 +274,7 @@ function PitchPlayerDot({
               )}
             </div>
           )}
-          {hasYellow && <span style={{ fontSize: 8 }}>🟨</span>}
+          {hasYellow && !hasRed && <span style={{ fontSize: 8 }}>🟨</span>}
           {hasRed && <span style={{ fontSize: 8 }}>🟥</span>}
         </div>
       )}

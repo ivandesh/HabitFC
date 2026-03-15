@@ -264,6 +264,15 @@ export function simulateMatch(
   }
   for (const gm of goalMinutes) flavorMinuteSet.delete(gm)
 
+  // Card tracking: yellows per player, and set of sent-off player IDs
+  const yellowCards: Record<string, number> = {}
+  const sentOff = new Set<string>()
+
+  /** Get eligible (not sent off) players from a team */
+  function eligible(teamPlayers: (Footballer | undefined)[]): Footballer[] {
+    return teamPlayers.filter((p): p is Footballer => !!p && !sentOff.has(p.id))
+  }
+
   let goalIdx = 0
 
   for (let minute = 1; minute <= 90; minute++) {
@@ -275,8 +284,9 @@ export function simulateMatch(
       const isHomeGoal = rng.chance(effectiveHomeRatio)
       const team = isHomeGoal ? 'home' as const : 'away' as const
       const teamPlayers = isHomeGoal ? homePlayers : awayPlayers
-      const scorerCandidates = teamPlayers.filter(p => p && (p.position === 'FWD' || p.position === 'MID'))
-      const scorer = rng.pick(scorerCandidates.length > 0 ? scorerCandidates : teamPlayers.filter(Boolean))
+      const onField = eligible(teamPlayers)
+      const scorerCandidates = onField.filter(p => p.position === 'FWD' || p.position === 'MID')
+      const scorer = rng.pick(scorerCandidates.length > 0 ? scorerCandidates : onField)
 
       if (isHomeGoal) scoreHome++; else scoreAway++
 
@@ -296,40 +306,65 @@ export function simulateMatch(
       const roll = rng.next()
       const team = rng.chance(homeRatio) ? 'home' as const : 'away' as const
       const teamPlayers = team === 'home' ? homePlayers : awayPlayers
-      const anyPlayer = rng.pick(teamPlayers.filter(Boolean))
+      const onField = eligible(teamPlayers)
+
+      // Skip event if no eligible players left
+      if (onField.length === 0) continue
+
+      const anyPlayer = rng.pick(onField)
 
       if (roll < 0.15) {
         // Yellow card
-        const defOrMid = teamPlayers.filter(p => p && (p.position === 'DEF' || p.position === 'MID'))
-        const carded = rng.pick(defOrMid.length > 0 ? defOrMid : teamPlayers.filter(Boolean))
-        if (team === 'home') homeGoalDebuff += 0.03; else awayGoalDebuff += 0.03
-        events.push({
-          minute, type: 'yellow_card', team,
-          playerId: carded?.id ?? '',
-          description: rng.pick(YELLOW_CARD_DESCRIPTIONS),
-        })
+        const defOrMid = onField.filter(p => p.position === 'DEF' || p.position === 'MID')
+        const carded = rng.pick(defOrMid.length > 0 ? defOrMid : onField)
+        if (!carded) continue
+
+        const cardedId = carded.id
+        yellowCards[cardedId] = (yellowCards[cardedId] ?? 0) + 1
+
+        if (yellowCards[cardedId] >= 2) {
+          // Second yellow = red card, player sent off
+          sentOff.add(cardedId)
+          if (team === 'home') homeGoalDebuff += 0.10; else awayGoalDebuff += 0.10
+          events.push({
+            minute, type: 'red_card', team,
+            playerId: cardedId,
+            description: 'Друга жовта — вилучення!',
+          })
+        } else {
+          if (team === 'home') homeGoalDebuff += 0.03; else awayGoalDebuff += 0.03
+          events.push({
+            minute, type: 'yellow_card', team,
+            playerId: cardedId,
+            description: rng.pick(YELLOW_CARD_DESCRIPTIONS),
+          })
+        }
       } else if (roll < 0.18) {
-        // Red card (rare)
-        const carded = rng.pick(teamPlayers.filter(Boolean))
+        // Straight red card (rare)
+        const carded = rng.pick(onField)
+        if (!carded) continue
+
+        sentOff.add(carded.id)
         if (team === 'home') homeGoalDebuff += 0.10; else awayGoalDebuff += 0.10
         events.push({
           minute, type: 'red_card', team,
-          playerId: carded?.id ?? '',
+          playerId: carded.id,
           description: rng.pick(RED_CARD_DESCRIPTIONS),
         })
       } else if (roll < 0.45) {
         // Near miss
         events.push({
           minute, type: 'near_miss', team,
-          playerId: anyPlayer?.id ?? '',
+          playerId: anyPlayer.id,
           description: rng.pick(NEAR_MISS_DESCRIPTIONS),
         })
       } else if (roll < 0.65) {
         // Great save
         const oppositeTeam = team === 'home' ? 'away' as const : 'home' as const
-        const keepers = (oppositeTeam === 'home' ? homePlayers : awayPlayers)
-          .filter(p => p?.position === 'GK')
-        const keeper = keepers.length > 0 ? rng.pick(keepers) : anyPlayer
+        const oppPlayers = oppositeTeam === 'home' ? homePlayers : awayPlayers
+        const oppOnField = eligible(oppPlayers)
+        const keepers = oppOnField.filter(p => p.position === 'GK')
+        const keeper = keepers.length > 0 ? rng.pick(keepers) : (oppOnField.length > 0 ? rng.pick(oppOnField) : anyPlayer)
         events.push({
           minute, type: 'great_save', team: oppositeTeam,
           playerId: keeper?.id ?? '',
@@ -338,7 +373,7 @@ export function simulateMatch(
       } else if (roll < 0.80) {
         // On fire
         const formRolls = team === 'home' ? homeStrength.formRolls : awayStrength.formRolls
-        const hotIdx = formRolls.findIndex(r => r >= 8)
+        const hotIdx = formRolls.findIndex((r, i) => r >= 8 && teamPlayers[i] && !sentOff.has(teamPlayers[i]!.id))
         if (hotIdx >= 0) {
           const hotPlayer = teamPlayers[hotIdx]
           events.push({
