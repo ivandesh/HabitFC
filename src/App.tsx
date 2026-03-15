@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
+import { useUnwatchedCount } from './hooks/useUnwatchedCount'
 import { AchievementToastManager } from './components/ui/AchievementToast'
 import { Dashboard } from './pages/Dashboard'
 import { Shop } from './pages/Shop'
@@ -58,6 +59,7 @@ function NavBar() {
   const importState = useAppStore(state => state.importState)
   const { signOut } = useAuthStore()
   const [profileOpen, setProfileOpen] = useState(false)
+  const unwatchedCount = useUnwatchedCount()
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
@@ -173,7 +175,14 @@ function NavBar() {
           <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
           <NavLink to="/team" className={linkClass}>Склад</NavLink>
           <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
-          <NavLink to="/friends" className={linkClass}>Друзі</NavLink>
+          <NavLink to="/friends" className={linkClass}>
+            <span className="relative">
+              Друзі
+              {unwatchedCount > 0 && (
+                <span className="absolute -top-1 -right-3 w-2 h-2 bg-yellow-400 rounded-full" />
+              )}
+            </span>
+          </NavLink>
           <div className="ml-auto flex items-center gap-1 shrink-0">
             <button
               onClick={handleExport}
@@ -226,6 +235,7 @@ function ScrollToTop() {
 
 function BottomNav() {
   const { pathname } = useLocation()
+  const unwatchedCount = useUnwatchedCount()
   if (pathname === '/open' || pathname.startsWith('/profile/')) return null
 
   const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -258,7 +268,12 @@ function BottomNav() {
           <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Здобутки</span>
         </NavLink>
         <NavLink to="/friends" className={tabClass}>
-          <FriendsIcon />
+          <div className="relative">
+            <FriendsIcon />
+            {unwatchedCount > 0 && (
+              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full" />
+            )}
+          </div>
           <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Друзі</span>
         </NavLink>
       </div>
