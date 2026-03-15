@@ -331,3 +331,142 @@ export function playAchievementUnlock() {
     })
   } catch { /* audio blocked */ }
 }
+
+// ─── Battle: Goal celebration — crowd roar + whistle ────────────────────────
+export function playGoal() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+
+    // Crowd roar: filtered noise burst (bandpass 200-800Hz)
+    const roar = ac.createBufferSource()
+    roar.buffer = noise(ac, 1.5)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 0.8
+    const rg = vol(ac)
+    roar.connect(bp); bp.connect(rg); rg.connect(ac.destination)
+    rg.gain.setValueAtTime(0, t)
+    rg.gain.linearRampToValueAtTime(0.35, t + 0.05)
+    rg.gain.setValueAtTime(0.35, t + 0.3)
+    rg.gain.exponentialRampToValueAtTime(0.001, t + 1.4)
+    roar.start(t); roar.stop(t + 1.5)
+
+    // Short whistle
+    const whistle = ac.createOscillator()
+    const wg = vol(ac)
+    whistle.connect(wg); wg.connect(ac.destination)
+    whistle.type = 'sine'
+    whistle.frequency.value = 3000
+    wg.gain.setValueAtTime(0, t)
+    wg.gain.linearRampToValueAtTime(0.15, t + 0.01)
+    wg.gain.exponentialRampToValueAtTime(0.001, t + 0.3)
+    whistle.start(t); whistle.stop(t + 0.35)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Yellow card — sharp whistle ────────────────────────────────────
+export function playYellowCard() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const whistle = ac.createOscillator()
+    const wg = vol(ac)
+    whistle.connect(wg); wg.connect(ac.destination)
+    whistle.type = 'sine'
+    whistle.frequency.setValueAtTime(3200, t)
+    whistle.frequency.linearRampToValueAtTime(2800, t + 0.15)
+    wg.gain.setValueAtTime(0, t)
+    wg.gain.linearRampToValueAtTime(0.18, t + 0.01)
+    wg.gain.exponentialRampToValueAtTime(0.001, t + 0.2)
+    whistle.start(t); whistle.stop(t + 0.25)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Red card — long whistle + crowd gasp ───────────────────────────
+export function playRedCard() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+
+    // Long whistle
+    const whistle = ac.createOscillator()
+    const wg = vol(ac)
+    whistle.connect(wg); wg.connect(ac.destination)
+    whistle.type = 'sine'
+    whistle.frequency.value = 3000
+    wg.gain.setValueAtTime(0, t)
+    wg.gain.linearRampToValueAtTime(0.2, t + 0.01)
+    wg.gain.setValueAtTime(0.2, t + 0.5)
+    wg.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+    whistle.start(t); whistle.stop(t + 0.75)
+
+    // Crowd gasp (noise burst through formant ~500Hz)
+    const gasp = ac.createBufferSource()
+    gasp.buffer = noise(ac, 0.4)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 2
+    const gg = vol(ac)
+    gasp.connect(bp); bp.connect(gg); gg.connect(ac.destination)
+    gg.gain.setValueAtTime(0, t + 0.3)
+    gg.gain.linearRampToValueAtTime(0.2, t + 0.35)
+    gg.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+    gasp.start(t + 0.3); gasp.stop(t + 0.75)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Near miss — crowd "ooh" ────────────────────────────────────────
+export function playNearMiss() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const ooh = ac.createBufferSource()
+    ooh.buffer = noise(ac, 0.5)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 3
+    const g = vol(ac)
+    ooh.connect(bp); bp.connect(g); g.connect(ac.destination)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.15, t + 0.05)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.45)
+    ooh.start(t); ooh.stop(t + 0.5)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Great save — crowd applause ────────────────────────────────────
+export function playGreatSave() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const clap = ac.createBufferSource()
+    clap.buffer = noise(ac, 0.8)
+    const hp = ac.createBiquadFilter()
+    hp.type = 'highpass'; hp.frequency.value = 2000
+    const g = vol(ac)
+    clap.connect(hp); hp.connect(g); g.connect(ac.destination)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.12, t + 0.03)
+    g.gain.setValueAtTime(0.12, t + 0.2)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+    clap.start(t); clap.stop(t + 0.8)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Final whistle — triple blast ───────────────────────────────────
+export function playFinalWhistle() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    for (let i = 0; i < 3; i++) {
+      const whistle = ac.createOscillator()
+      const wg = vol(ac)
+      whistle.connect(wg); wg.connect(ac.destination)
+      whistle.type = 'sine'
+      whistle.frequency.value = 3000
+      const s = t + i * 0.2
+      wg.gain.setValueAtTime(0, s)
+      wg.gain.linearRampToValueAtTime(0.18, s + 0.01)
+      wg.gain.exponentialRampToValueAtTime(0.001, s + 0.12)
+      whistle.start(s); whistle.stop(s + 0.15)
+    }
+  } catch { /* audio blocked */ }
+}
