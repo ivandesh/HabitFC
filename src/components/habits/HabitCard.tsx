@@ -16,6 +16,7 @@ import { CSS } from '@dnd-kit/utilities'
 interface Props {
   habit: Habit
   onEdit: (habit: Habit) => void
+  compact?: boolean
 }
 
 interface EarnBreakdown {
@@ -28,7 +29,7 @@ interface EarnBreakdown {
   total: number
 }
 
-export function HabitCard({ habit, onEdit }: Props) {
+export function HabitCard({ habit, onEdit, compact }: Props) {
   const completeHabit = useAppStore(state => state.completeHabit)
   const removeHabit = useAppStore(state => state.removeHabit)
   // Select only the slices needed — primitives/arrays so Object.is stays stable
@@ -89,6 +90,39 @@ export function HabitCard({ habit, onEdit }: Props) {
     transition,
     opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 50 : undefined,
+  }
+
+  if (compact) {
+    return (
+      <div
+        ref={setNodeRef}
+        style={style}
+        className={`flex flex-col items-center rounded-xl border transition-all px-3 py-3 gap-1.5 ${
+          done
+            ? 'border-[#00E676]/25 bg-[#00E676]/5'
+            : 'border-[#1A2336] bg-[#0A0F1A] hover:border-[#2A3A50]'
+        }`}
+      >
+        <div className="text-2xl">{habit.icon}</div>
+        <div className="text-xs font-semibold text-center leading-tight text-[#E8F0FF] truncate w-full">{habit.name}</div>
+        <div className="flex items-center gap-1.5 text-[10px]">
+          {activeStreak > 0 && <StreakBadge streak={activeStreak} />}
+          <span className="text-[#00E676] font-bold flex items-center gap-0.5"><CoinIcon size={10} />+{earned}</span>
+        </div>
+        {done ? (
+          <div className="w-full py-1.5 text-center rounded-lg bg-[#00E676]/10 text-[#00E676] font-bold text-xs font-oswald uppercase tracking-wider">
+            ✓
+          </div>
+        ) : (
+          <button
+            onClick={() => { completeHabit(habit.id); playHabitComplete() }}
+            className="w-full py-1.5 text-center rounded-lg bg-[#00E676] hover:bg-[#00FF87] text-[#04060A] font-bold text-xs font-oswald uppercase tracking-wider transition-all cursor-pointer glow-green-btn"
+          >
+            ✓
+          </button>
+        )}
+      </div>
+    )
   }
 
   return (

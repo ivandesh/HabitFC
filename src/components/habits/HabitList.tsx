@@ -18,9 +18,20 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable'
 
+function useViewMode() {
+  const [compact, setCompact] = useState(() => localStorage.getItem('habit-view-mode') === 'compact')
+  const toggle = () => {
+    const next = !compact
+    localStorage.setItem('habit-view-mode', next ? 'compact' : 'normal')
+    setCompact(next)
+  }
+  return [compact, toggle] as const
+}
+
 export function HabitList() {
   const habits = useAppStore(state => state.habits)
   const reorderHabits = useAppStore(state => state.reorderHabits)
+  const [compact, toggleCompact] = useViewMode()
   const [showModal, setShowModal] = useState(false)
   const [editingHabit, setEditingHabit] = useState<Habit | null>(null)
 
@@ -46,12 +57,25 @@ export function HabitList() {
             Звички
           </h2>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="font-oswald px-5 py-2.5 bg-[#00E676] hover:bg-[#00FF87] text-[#04060A] font-bold uppercase tracking-widest text-sm rounded-xl transition-all cursor-pointer glow-green-btn"
-        >
-          + Додати
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={toggleCompact}
+            className={`p-2 rounded-lg border transition-colors cursor-pointer ${
+              compact
+                ? 'border-[#00E676]/30 bg-[#00E676]/10 text-[#00E676]'
+                : 'border-[#1A2336] bg-[#0A0F1A] text-[#5A7090] hover:text-[#8A9AB0]'
+            }`}
+            title={compact ? 'Звичайний вигляд' : 'Компактний вигляд'}
+          >
+            {compact ? '☰' : '▤'}
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            className="font-oswald px-5 py-2.5 bg-[#00E676] hover:bg-[#00FF87] text-[#04060A] font-bold uppercase tracking-widest text-sm rounded-xl transition-all cursor-pointer glow-green-btn"
+          >
+            + Додати
+          </button>
+        </div>
       </div>
 
       {habits.length === 0 ? (
@@ -65,8 +89,8 @@ export function HabitList() {
       ) : (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={habits.map(h => h.id)} strategy={rectSortingStrategy}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {habits.map(h => <HabitCard key={h.id} habit={h} onEdit={setEditingHabit} />)}
+            <div className={compact ? 'grid grid-cols-2 gap-2' : 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'}>
+              {habits.map(h => <HabitCard key={h.id} habit={h} onEdit={setEditingHabit} compact={compact} />)}
             </div>
           </SortableContext>
         </DndContext>
