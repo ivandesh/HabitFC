@@ -79,7 +79,7 @@ interface ChemLink {
 
 function getChemistryLinks(
   squad: (string | null)[],
-  slots: FormationSlot[]
+  _slots: FormationSlot[]
 ): ChemLink[] {
   const links: ChemLink[] = []
   const players = squad.map(id => id ? footballers.find(f => f.id === id) ?? null : null)
