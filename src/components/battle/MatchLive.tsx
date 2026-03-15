@@ -616,28 +616,75 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
   // Full stats for post-match
   const fullPlayerStats = useMemo(() => buildPlayerStats(match.events), [match.events])
 
+  // ─── Event feed (shared between mobile & desktop) ──────────────────────
+  const eventFeed = (
+    <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-4 max-h-[30vh] sm:max-h-full overflow-y-auto sm:h-full">
+      <div className="font-oswald text-[10px] text-[#5A7090] uppercase tracking-widest mb-2 hidden sm:block">
+        Коментарі
+      </div>
+      {visibleEvents.length === 0 && (
+        <div className="text-center text-[#5A7090] text-sm py-4 font-oswald tracking-wider">
+          МАТЧ РОЗПОЧАВСЯ...
+        </div>
+      )}
+      <AnimatePresence>
+        {visibleEvents.map((ev, i) => (
+          <motion.div
+            key={`${ev.minute}-${ev.type}-${i}`}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={`flex items-start gap-2 py-2 text-sm ${
+              ev.type === 'goal' ? 'text-white font-bold' : 'text-[#8A9BBF]'
+            }`}
+          >
+            <span className="text-[#5A7090] font-oswald text-xs w-8 shrink-0 pt-0.5">
+              {ev.minute}'
+            </span>
+            <span className="shrink-0">{EVENT_ICONS[ev.type]}</span>
+            <span>
+              {ev.type === 'momentum_shift' ? (
+                <span className={ev.team === 'home' ? 'text-[#00E676]' : 'text-red-400'}>
+                  {ev.team === 'home' ? homeName : awayName} {ev.description}
+                </span>
+              ) : (
+                <>
+                  <span className={ev.team === 'home' ? 'text-[#00E676]' : 'text-red-400'}>
+                    {ev.playerId ? getPlayerName(ev.playerId) : (ev.team === 'home' ? homeName : awayName)}
+                  </span>
+                  {' — '}
+                  {ev.description}
+                </>
+              )}
+            </span>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+      <div ref={eventsEndRef} />
+    </div>
+  )
+
   return (
-    <div className="max-w-lg mx-auto px-4 py-6">
+    <div className="max-w-lg sm:max-w-5xl mx-auto px-4 py-6">
       {/* Scoreboard */}
       <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-5 mb-4">
         <div className="flex items-center justify-center gap-5">
           <div className="text-center flex-1">
-            <div className="font-oswald text-[10px] tracking-[0.2em] text-[#00E676] uppercase mb-1 truncate">
+            <div className="font-oswald text-[10px] sm:text-xs tracking-[0.2em] text-[#00E676] uppercase mb-1 truncate">
               {homeName}
             </div>
-            <div className="font-oswald text-4xl font-bold text-white">{scoreHome}</div>
+            <div className="font-oswald text-4xl sm:text-5xl font-bold text-white">{scoreHome}</div>
           </div>
           <div className="text-center">
-            <div className="font-oswald text-sm text-[#5A7090]">{currentMinute > 90 ? 90 : currentMinute}'</div>
+            <div className="font-oswald text-sm sm:text-lg text-[#5A7090]">{currentMinute > 90 ? 90 : currentMinute}'</div>
             {isHalfTime && (
               <div className="font-oswald text-xs text-yellow-400 mt-1">HT</div>
             )}
           </div>
           <div className="text-center flex-1">
-            <div className="font-oswald text-[10px] tracking-[0.2em] text-red-400 uppercase mb-1 truncate">
+            <div className="font-oswald text-[10px] sm:text-xs tracking-[0.2em] text-red-400 uppercase mb-1 truncate">
               {awayName}
             </div>
-            <div className="font-oswald text-4xl font-bold text-white">{scoreAway}</div>
+            <div className="font-oswald text-4xl sm:text-5xl font-bold text-white">{scoreAway}</div>
           </div>
         </div>
         <div className="mt-4 h-1 bg-[#1A2336] rounded-full overflow-hidden">
@@ -650,76 +697,63 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
         </div>
       </div>
 
-      {/* Animated Pitch with players */}
-      <MatchPitch
-        ball={ballState}
-        isFinished={isFinished}
-        homePlayers={homePitchPlayers}
-        awayPlayers={awayPitchPlayers}
-        playerStats={playerStats}
-        showBadges={true}
-      />
-
-      {/* Event feed */}
+      {/* ── During match: Pitch + Commentary ── */}
       {!isFinished && (
-        <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-4 max-h-[30vh] overflow-y-auto">
-          {visibleEvents.length === 0 && (
-            <div className="text-center text-[#5A7090] text-sm py-4 font-oswald tracking-wider">
-              МАТЧ РОЗПОЧАВСЯ...
-            </div>
-          )}
-          <AnimatePresence>
-            {visibleEvents.map((ev, i) => (
-              <motion.div
-                key={`${ev.minute}-${ev.type}-${i}`}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={`flex items-start gap-2 py-2 text-sm ${
-                  ev.type === 'goal' ? 'text-white font-bold' : 'text-[#8A9BBF]'
-                }`}
-              >
-                <span className="text-[#5A7090] font-oswald text-xs w-8 shrink-0 pt-0.5">
-                  {ev.minute}'
-                </span>
-                <span className="shrink-0">{EVENT_ICONS[ev.type]}</span>
-                <span>
-                  {ev.type === 'momentum_shift' ? (
-                    <span className={ev.team === 'home' ? 'text-[#00E676]' : 'text-red-400'}>
-                      {ev.team === 'home' ? homeName : awayName} {ev.description}
-                    </span>
-                  ) : (
-                    <>
-                      <span className={ev.team === 'home' ? 'text-[#00E676]' : 'text-red-400'}>
-                        {ev.playerId ? getPlayerName(ev.playerId) : (ev.team === 'home' ? homeName : awayName)}
-                      </span>
-                      {' — '}
-                      {ev.description}
-                    </>
-                  )}
-                </span>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-          <div ref={eventsEndRef} />
-        </div>
+        <>
+          {/* Desktop: pitch (large) + sidebar commentary */}
+          <div className="hidden sm:grid sm:grid-cols-[1fr_280px] gap-4 mb-4">
+            <MatchPitch
+              ball={ballState}
+              isFinished={isFinished}
+              homePlayers={homePitchPlayers}
+              awayPlayers={awayPitchPlayers}
+              playerStats={playerStats}
+              showBadges={true}
+            />
+            {eventFeed}
+          </div>
+
+          {/* Mobile: pitch stacked above commentary */}
+          <div className="sm:hidden">
+            <MatchPitch
+              ball={ballState}
+              isFinished={isFinished}
+              homePlayers={homePitchPlayers}
+              awayPlayers={awayPitchPlayers}
+              playerStats={playerStats}
+              showBadges={true}
+            />
+            {eventFeed}
+          </div>
+        </>
       )}
 
-      {/* Full-time result + lineups */}
+      {/* ── Full-time result + lineups ── */}
       <AnimatePresence>
         {isFinished && (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
+            {/* Pitch with final state */}
+            <MatchPitch
+              ball={ballState}
+              isFinished={isFinished}
+              homePlayers={homePitchPlayers}
+              awayPlayers={awayPitchPlayers}
+              playerStats={fullPlayerStats}
+              showBadges={true}
+            />
+
             {/* Result banner */}
             <div className="bg-[#0A0F1A] border border-[#1A2336] rounded-2xl p-6 text-center mb-4">
               <div className="font-oswald text-xs tracking-[0.3em] text-[#5A7090] uppercase mb-2">
                 Фінальний свисток
               </div>
-              <div className={`font-oswald text-3xl font-bold ${resultColor} mb-1`}>
+              <div className={`font-oswald text-3xl sm:text-4xl font-bold ${resultColor} mb-1`}>
                 {resultLabel}
               </div>
-              <div className="font-oswald text-xl text-white mb-4">
+              <div className="font-oswald text-xl sm:text-2xl text-white mb-4">
                 {scoreHome} — {scoreAway}
               </div>
               {match.coinsAwardedTo.length > 0 && (
@@ -729,14 +763,13 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
               )}
             </div>
 
-            {/* Team lineups with ratings */}
-            <div className="space-y-3 mb-4">
+            {/* Team lineups: stacked on mobile, 2 columns on desktop */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
               <PostMatchLineup
                 title={homeName}
                 titleColor="text-[#00E676]"
                 squadIds={match.challengerSquad.squad}
                 formation={match.challengerSquad.formation}
-
                 playerStats={fullPlayerStats}
               />
               <PostMatchLineup
@@ -744,7 +777,6 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
                 titleColor="text-red-400"
                 squadIds={match.challengedSquad.squad}
                 formation={match.challengedSquad.formation}
-
                 playerStats={fullPlayerStats}
               />
             </div>
