@@ -1,29 +1,46 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { CoinIcon } from '../ui/CoinIcon'
 import { EmojiPicker } from '../ui/EmojiPicker'
+import type { Habit } from '../../types'
 
 interface Props {
+  habit?: Habit   // present = edit mode, absent = add mode
   onClose: () => void
 }
 
-export function AddHabitModal({ onClose }: Props) {
+export function HabitFormModal({ habit, onClose }: Props) {
   const addHabit = useAppStore(state => state.addHabit)
-  const [name, setName] = useState('')
-  const [icon, setIcon] = useState('🧘')
-  const [coinValue, setCoinValue] = useState(50)
+  const updateHabit = useAppStore(state => state.updateHabit)
+  const [name, setName] = useState(habit?.name ?? '')
+  const [icon, setIcon] = useState(habit?.icon ?? '🧘')
+  const [coinValue, setCoinValue] = useState(habit?.coinValue ?? 50)
+
+  const isEdit = !!habit
+
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    addHabit({ name: name.trim(), icon, coinValue })
+    if (isEdit) {
+      updateHabit(habit.id, { name: name.trim(), icon, coinValue })
+    } else {
+      addHabit({ name: name.trim(), icon, coinValue })
+    }
     onClose()
   }
 
   return (
-    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
-      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md">
-        <h2 className="text-xl font-bold mb-6">Нова звичка</h2>
+    <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-gray-900 border border-gray-700 rounded-2xl p-6 w-full max-w-md" onClick={e => e.stopPropagation()}>
+        <h2 className="text-xl font-bold mb-6">{isEdit ? 'Редагувати звичку' : 'Нова звичка'}</h2>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
             <label className="block text-sm text-gray-400 mb-2">Іконка</label>
@@ -59,7 +76,7 @@ export function AddHabitModal({ onClose }: Props) {
               Скасувати
             </button>
             <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-xl text-white font-bold transition-colors">
-              Додати
+              {isEdit ? 'Зберегти' : 'Додати'}
             </button>
           </div>
         </form>

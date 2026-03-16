@@ -26,6 +26,15 @@ export function ProfileModal({ onClose }: Props) {
   const user = useAuthStore(state => state.user)
   const { signOut } = useAuthStore()
 
+  // Escape key closes modal
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onClose()
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [onClose])
+
   // Profile state — loaded from DB on mount
   const [username, setUsername] = useState('')
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)

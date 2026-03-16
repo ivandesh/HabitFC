@@ -1,4 +1,4 @@
-import { footballers } from '../data/footballers'
+import { footballers, footballerMap } from '../data/footballers'
 import type { AppState } from '../types'
 
 export interface AchievementDef {
@@ -246,8 +246,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
-        .map(id => footballers.find(f => f.id === id))
-        .filter((f): f is typeof footballers[0] => f !== undefined)
+        .map(id => footballerMap.get(id))
+        .filter(Boolean) as typeof footballers
       let links = 0
       for (let i = 0; i < players.length; i++)
         for (let j = i + 1; j < players.length; j++)
@@ -266,8 +266,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     condition: s => {
       const players = s.squad
         .filter((id): id is string => id !== null)
-        .map(id => footballers.find(f => f.id === id))
-        .filter((f): f is typeof footballers[0] => f !== undefined)
+        .map(id => footballerMap.get(id))
+        .filter(Boolean) as typeof footballers
       if (players.length === 0) return false
       const overall = Math.round(
         players.reduce((sum, f) =>

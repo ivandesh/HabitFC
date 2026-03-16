@@ -1,0 +1,110 @@
+<h2>Live Match Simulation — UI Concept</h2>
+<p class="subtitle">How should the match screen look while the game plays out?</p>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0A0F1A; border-radius:8px; padding:16px; font-family:monospace;">
+        <!-- Scoreboard -->
+        <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:16px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#00E676; text-transform:uppercase; letter-spacing:1px;">Your Squad</div>
+            <div style="font-size:36px; font-weight:bold; color:#E8F0FF;">2</div>
+          </div>
+          <div style="text-align:center; padding:0 12px;">
+            <div style="font-size:11px; color:rgba(232,240,255,0.4);">45'</div>
+            <div style="font-size:14px; color:rgba(232,240,255,0.3);">HT</div>
+          </div>
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#ff6b6b; text-transform:uppercase; letter-spacing:1px;">Andriy FC</div>
+            <div style="font-size:36px; font-weight:bold; color:#E8F0FF;">1</div>
+          </div>
+        </div>
+        <!-- Progress bar -->
+        <div style="height:3px; background:rgba(255,255,255,0.1); border-radius:2px; margin-bottom:16px;">
+          <div style="width:50%; height:100%; background:linear-gradient(90deg,#00E676,#00E676); border-radius:2px;"></div>
+        </div>
+        <!-- Timeline events -->
+        <div style="font-size:11px; line-height:2; color:#E8F0FF;">
+          <div><span style="color:rgba(232,240,255,0.4);">12'</span> ⚽ <span style="color:#00E676;">Haaland</span> — Header from corner</div>
+          <div><span style="color:rgba(232,240,255,0.4);">23'</span> 🟨 <span style="color:#ff6b6b;">Rodri</span> — Tactical foul</div>
+          <div><span style="color:rgba(232,240,255,0.4);">31'</span> ⚽ <span style="color:#ff6b6b;">Salah</span> — Counter attack</div>
+          <div><span style="color:rgba(232,240,255,0.4);">38'</span> 🔥 <span style="color:#00E676;">Mbappé</span> is on fire!</div>
+          <div><span style="color:rgba(232,240,255,0.4);">42'</span> ⚽ <span style="color:#00E676;">Mbappé</span> — Solo run</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A: Scoreboard + Event Feed</h3>
+      <p>Classic live score layout. Big score at top, progress bar showing match time, events scroll in below as they happen. Clean and focused.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0A0F1A; border-radius:8px; padding:16px; font-family:monospace;">
+        <!-- Scoreboard -->
+        <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:12px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#00E676; text-transform:uppercase; letter-spacing:1px;">Your Squad</div>
+            <div style="font-size:32px; font-weight:bold; color:#E8F0FF;">2</div>
+          </div>
+          <div style="font-size:12px; color:rgba(232,240,255,0.4);">45'</div>
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#ff6b6b; text-transform:uppercase; letter-spacing:1px;">Andriy FC</div>
+            <div style="font-size:32px; font-weight:bold; color:#E8F0FF;">1</div>
+          </div>
+        </div>
+        <!-- Mini pitch -->
+        <div style="background:#1a5c2a; border-radius:6px; height:80px; position:relative; margin-bottom:12px; border:1px solid rgba(255,255,255,0.1);">
+          <div style="position:absolute; left:50%; top:0; bottom:0; width:1px; background:rgba(255,255,255,0.15);"></div>
+          <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:24px; height:24px; border-radius:50%; border:1px solid rgba(255,255,255,0.15);"></div>
+          <div style="position:absolute; left:65%; top:40%; width:8px; height:8px; background:#fff; border-radius:50%; box-shadow:0 0 6px rgba(255,255,255,0.5);"></div>
+          <div style="position:absolute; bottom:4px; left:50%; transform:translateX(-50%); font-size:9px; color:rgba(255,255,255,0.5);">⚽ Mbappé on the ball</div>
+        </div>
+        <!-- Latest event -->
+        <div style="background:rgba(0,230,118,0.1); border-radius:6px; padding:8px 10px; font-size:11px; color:#E8F0FF; text-align:center;">
+          ⚽ 42' — <span style="color:#00E676;">Mbappé</span> scores! Solo run past the defense!
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B: Pitch View + Live Events</h3>
+      <p>Mini pitch visualization showing ball position, plus latest event highlighted. More visual and immersive, like a real match tracker app.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background:#0A0F1A; border-radius:8px; padding:16px; font-family:monospace;">
+        <!-- Scoreboard -->
+        <div style="display:flex; justify-content:center; align-items:center; gap:16px; margin-bottom:12px;">
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#00E676;">YOUR SQUAD</div>
+            <div style="font-size:32px; font-weight:bold; color:#E8F0FF;">2</div>
+          </div>
+          <div style="font-size:12px; color:rgba(232,240,255,0.4);">45'</div>
+          <div style="text-align:center;">
+            <div style="font-size:11px; color:#ff6b6b;">ANDRIY FC</div>
+            <div style="font-size:32px; font-weight:bold; color:#E8F0FF;">1</div>
+          </div>
+        </div>
+        <!-- Commentary style -->
+        <div style="font-size:11px; line-height:1.8; color:#E8F0FF; border-left:2px solid #00E676; padding-left:10px;">
+          <div style="color:rgba(232,240,255,0.3); font-size:10px;">LATEST</div>
+          <div style="margin-bottom:6px;">🔥 <strong>42'</strong> — ГОООЛ! Mbappé picks up the ball on the left wing, cuts inside past two defenders, and curls it into the far corner! What a strike!</div>
+          <div style="opacity:0.5;">⚡ <strong>38'</strong> — Mbappé is feeling it today! Form bonus active.</div>
+          <div style="opacity:0.3;">🟨 <strong>23'</strong> — Yellow card for Rodri. Cynical challenge on Vinícius.</div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C: Commentary Style</h3>
+      <p>Rich text commentary for each event, like a live blog. More dramatic and story-driven. Events fade as new ones arrive. Each goal gets a vivid description.</p>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top:20px; padding:14px; background:rgba(255,255,255,0.03); border-radius:8px; border:1px solid rgba(255,255,255,0.06); font-size:13px; opacity:0.7;">
+  <strong>Note:</strong> All options include sound effects for goals, cards, and key moments. The match plays out over ~30-60 seconds with events appearing at their minute marks.
+</div>

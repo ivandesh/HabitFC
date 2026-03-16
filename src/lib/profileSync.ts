@@ -56,7 +56,7 @@ export async function searchUsers(
   const { data, error } = await supabase
     .from('user_state')
     .select('user_id, username, avatar_url, avatar_emoji')
-    .ilike('username', `%${query}%`)
+    .ilike('username', `%${query.replace(/[%_]/g, '\\$&')}%`)
     .neq('user_id', currentUserId)
     .not('username', 'is', null)
     .limit(20)

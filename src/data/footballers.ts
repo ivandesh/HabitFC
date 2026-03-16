@@ -1,5 +1,9 @@
 import type { Footballer } from '../types'
 
+export function playerOverall(f: Footballer): number {
+  return Math.round((f.stats.pace + f.stats.shooting + f.stats.passing + f.stats.dribbling) / 4)
+}
+
 export const footballers: Footballer[] = [
   // ── LEGENDARY (8) ────────────────────────────────────────────────────────────
   { id: 'messi',      name: 'Lionel Messi',         club: 'Inter Miami',      nationality: 'Argentina',  rarity: 'legendary', position: 'FWD', stats: { pace: 85, shooting: 95, passing: 97, dribbling: 99 }, emoji: '⭐', photoUrl: '/players/messi.png' },
@@ -216,3 +220,8 @@ export const footballers: Footballer[] = [
   { id: 'mcneil',     name: 'Dwight McNeil',         club: 'Everton',          nationality: 'England',    rarity: 'common', position: 'FWD', stats: { pace: 74, shooting: 68, passing: 74, dribbling: 74 }, emoji: '⚽', photoUrl: '/players/mcneil.png' },
   { id: 'harrison',   name: 'Jack Harrison',         club: 'Fiorentina',       nationality: 'England',    rarity: 'common', position: 'FWD', stats: { pace: 77, shooting: 66, passing: 70, dribbling: 74 }, emoji: '⚽', photoUrl: '/players/harrison.png' },
 ]
+
+/** O(1) lookup by ID — use instead of footballers.find() */
+export const footballerMap = new Map<string, Footballer>(
+  footballers.map(f => [f.id, f])
+)

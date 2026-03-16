@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Match, MatchEvent, Footballer } from '../../types'
-import { footballers } from '../../data/footballers'
+import { footballerMap } from '../../data/footballers'
 import { FORMATIONS } from '../../lib/formations'
 import {
   playGoal, playYellowCard, playRedCard,
@@ -22,7 +22,7 @@ const SOUND_MAP: Record<string, (() => void) | undefined> = {
 }
 
 function getPlayer(id: string): Footballer | undefined {
-  return footballers.find(f => f.id === id)
+  return footballerMap.get(id)
 }
 
 function getPlayerName(id: string): string {

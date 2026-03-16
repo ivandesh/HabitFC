@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
+import { useShallow } from 'zustand/react/shallow'
 import { useAppStore } from '../store/useAppStore'
 import { ACHIEVEMENTS } from '../lib/achievements'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
@@ -15,18 +16,27 @@ const TABS: { key: Category; label: string }[] = [
 ]
 
 export function Achievements() {
-  const achievements = useAppStore(state => state.achievements)
-  const claimedAchievements = useAppStore(state => state.claimedAchievements)
   const claimAchievementReward = useAppStore(state => state.claimAchievementReward)
-  const totalCompletions = useAppStore(state => state.totalCompletions)
-  const collection = useAppStore(state => state.collection)
-  const squad = useAppStore(state => state.squad)
-  const coachCollection = useAppStore(state => state.coachCollection)
-  const assignedCoach = useAppStore(state => state.assignedCoach)
-  const progressState = useMemo(
-    () => ({ achievements, claimedAchievements, totalCompletions, collection, squad, coachCollection, assignedCoach } as AppState),
-    [achievements, claimedAchievements, totalCompletions, collection, squad, coachCollection, assignedCoach]
-  )
+  const progressState = useAppStore(
+    useShallow(state => ({
+      achievements: state.achievements,
+      claimedAchievements: state.claimedAchievements,
+      totalCompletions: state.totalCompletions,
+      collection: state.collection,
+      squad: state.squad,
+      coachCollection: state.coachCollection,
+      assignedCoach: state.assignedCoach,
+      // Include remaining AppState fields with defaults so progressFn never crashes
+      coins: state.coins,
+      habits: state.habits,
+      pullHistory: state.pullHistory,
+      formation: state.formation,
+      pendingUnlocks: state.pendingUnlocks,
+      pityCounters: state.pityCounters,
+      following: state.following,
+    }))
+  ) as AppState
+  const { achievements, claimedAchievements } = progressState
   const [tab, setTab] = useState<Category>('all')
 
   const filtered = ACHIEVEMENTS.filter(a => tab === 'all' || a.category === tab)

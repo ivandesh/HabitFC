@@ -1,8 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../../store/useAppStore'
 import { HabitCard } from './HabitCard'
-import { AddHabitModal } from './AddHabitModal'
-import { EditHabitModal } from './EditHabitModal'
+import { HabitFormModal } from './HabitFormModal'
 import type { Habit } from '../../types'
 import {
   DndContext,
@@ -96,8 +95,8 @@ export function HabitList() {
         </DndContext>
       )}
 
-      {showModal && <AddHabitModal onClose={() => setShowModal(false)} />}
-      {editingHabit && <EditHabitModal habit={editingHabit} onClose={() => setEditingHabit(null)} />}
+      {showModal && <HabitFormModal onClose={() => setShowModal(false)} />}
+      {editingHabit && <HabitFormModal habit={editingHabit} onClose={() => setEditingHabit(null)} />}
     </div>
   )
 }

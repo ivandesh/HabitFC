@@ -29,9 +29,7 @@ export function Friends() {
   const navigate = useNavigate()
   const user = useAuthStore(state => state.user)
   const following = useAppStore(state => state.following)
-  const setFollowing = (ids: string[]) => {
-    useAppStore.setState({ following: ids })
-  }
+  const setFollowing = useAppStore(state => state.setFollowing)
 
   const [query, setQuery] = useState('')
   const [searchResults, setSearchResults] = useState<ProfileRow[]>([])

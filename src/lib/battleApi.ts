@@ -3,7 +3,33 @@ import type { Challenge, Match, SquadSnapshot, MatchEvent, MatchResult } from '.
 
 // ─── Row → Domain Mappers ───────────────────────────────────────────────────
 
-function toChallenge(row: any): Challenge {
+interface ChallengeRow {
+  id: string
+  challenger_id: string
+  challenged_id: string
+  status: string
+  challenger_squad: Challenge['challengerSquad']
+  created_at: string
+  expires_at: string
+}
+
+interface MatchRow {
+  id: string
+  challenge_id: string
+  challenger_id: string
+  challenged_id: string
+  challenger_squad: Match['challengerSquad']
+  challenged_squad: Match['challengedSquad']
+  match_seed: string
+  events: MatchEvent[]
+  score_home: number
+  score_away: number
+  result: MatchResult
+  coins_awarded_to: string[] | null
+  played_at: string
+}
+
+function toChallenge(row: ChallengeRow): Challenge {
   return {
     id: row.id,
     challengerId: row.challenger_id,
@@ -15,7 +41,7 @@ function toChallenge(row: any): Challenge {
   }
 }
 
-function toMatch(row: any): Match {
+function toMatch(row: MatchRow): Match {
   return {
     id: row.id,
     challengeId: row.challenge_id,
@@ -24,11 +50,11 @@ function toMatch(row: any): Match {
     challengerSquad: row.challenger_squad,
     challengedSquad: row.challenged_squad,
     matchSeed: row.match_seed,
-    events: row.events as MatchEvent[],
+    events: row.events,
     scoreHome: row.score_home,
     scoreAway: row.score_away,
-    result: row.result as MatchResult,
-    coinsAwardedTo: (row.coins_awarded_to ?? []) as string[],
+    result: row.result,
+    coinsAwardedTo: row.coins_awarded_to ?? [],
     playedAt: row.played_at,
   }
 }

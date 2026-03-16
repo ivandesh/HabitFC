@@ -1,5 +1,5 @@
-import { footballers } from '../data/footballers'
-import type { AppState } from '../types'
+import { footballerMap } from '../data/footballers'
+import type { AppState, Footballer } from '../types'
 
 export interface BonusEntry {
   label: string
@@ -9,8 +9,8 @@ export interface BonusEntry {
 export function computeActiveBonuses(state: AppState): BonusEntry[] {
   const squadPlayers = (state.squad ?? [])
     .filter((id): id is string => id !== null)
-    .map(id => footballers.find(f => f.id === id))
-    .filter((f): f is typeof footballers[0] => f !== undefined)
+    .map(id => footballerMap.get(id))
+    .filter((f): f is Footballer => f !== undefined)
 
   if (squadPlayers.length === 0) return []
 

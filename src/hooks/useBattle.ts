@@ -18,21 +18,7 @@ import {
 import { fetchUserProfile } from '../lib/profileSync'
 import { simulateMatch } from '../lib/battleEngine'
 import { createRng, hashSeed } from '../lib/seededRng'
-
-const WATCHED_KEY = 'habitfc_watched_matches'
-
-function getWatchedSet(): Set<string> {
-  try {
-    const raw = localStorage.getItem(WATCHED_KEY)
-    return raw ? new Set(JSON.parse(raw)) : new Set()
-  } catch { return new Set() }
-}
-
-function markWatched(matchId: string) {
-  const set = getWatchedSet()
-  set.add(matchId)
-  localStorage.setItem(WATCHED_KEY, JSON.stringify([...set]))
-}
+import { getWatchedSet, markWatched } from '../lib/watchedMatches'
 
 export function useBattle() {
   const user = useAuthStore(s => s.user)

@@ -8,7 +8,8 @@
       "Bash(node:*)",
       "Bash(grep:*)",
       "Bash(npm test:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(bash \"C:\\\\Users\\\\USER\\\\.claude\\\\plugins\\\\cache\\\\claude-plugins-official\\\\superpowers\\\\5.0.2\\\\skills\\\\brainstorming\\\\scripts\\\\start-server.sh\" --project-dir \"C:\\\\Users\\\\USER\\\\habit-tracker\")"
     ]
   }
 }

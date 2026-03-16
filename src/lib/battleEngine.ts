@@ -1,5 +1,5 @@
 import type { SquadSnapshot, Footballer } from '../types'
-import { footballers } from '../data/footballers'
+import { footballerMap } from '../data/footballers'
 import { coaches } from '../data/coaches'
 import { FORMATIONS } from './formations'
 import type { SeededRng } from './seededRng'
@@ -53,7 +53,7 @@ function positionStats(player: Footballer): number {
 
 /** Resolve footballer objects from a snapshot */
 export function resolveSquad(snap: SquadSnapshot): (Footballer | undefined)[] {
-  return snap.squad.map(id => footballers.find(f => f.id === id))
+  return snap.squad.map(id => footballerMap.get(id))
 }
 
 /** Calculate all 10 sub-scores and return total team strength (0–100) */

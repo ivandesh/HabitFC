@@ -3,7 +3,7 @@ import type { Habit, Footballer, AppState } from '../types'
 import { scheduleSave, flushSave } from '../lib/stateSync'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
-import { footballers } from '../data/footballers'
+import { footballerMap } from '../data/footballers'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import { checkAchievements, ACHIEVEMENTS } from '../lib/achievements'
 import { computeCoachHabitBonus, computeCoachChemistryPct, getAssignedCoach } from '../lib/coachPerks'
@@ -34,6 +34,7 @@ interface AppStore extends AppState {
   claimAchievementReward: (id: string) => void
   drainPendingUnlock: () => string | undefined
   setFormation: (formation: string) => void
+  setFollowing: (ids: string[]) => void
 }
 
 export const useAppStore = create<AppStore>()((set, get) => ({
@@ -91,7 +92,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           const coach = getAssignedCoach(state)
           const squadPlayers = (state.squad ?? [])
             .filter((id): id is string => id !== null)
-            .map(id => footballers.find(f => f.id === id))
+            .map(id => footballerMap.get(id))
             .filter((f): f is Footballer => f !== undefined)
           const coachChemPct = coach ? computeCoachChemistryPct(coach, squadPlayers) : 0
           const earned = Math.round(baseCoin * (1 + (bonusPct + coachChemPct) / 100))
@@ -285,6 +286,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       /** Updates formation and resets squad to all-null (positions change between formations). */
       setFormation: (formation) => {
         set({ formation, squad: Array(11).fill(null) })
+      },
+
+      setFollowing: (ids) => {
+        set({ following: ids })
       },
 }))
 

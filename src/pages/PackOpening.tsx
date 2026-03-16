@@ -360,8 +360,18 @@ function Deck({ pack, remaining, nextIndex, onDeal }: {
 function normalizeState(raw: unknown): LocationState | null {
   if (!raw || typeof raw !== 'object') return null
   const s = raw as Record<string, unknown>
-  if (s.type === 'coach' && s.coach) return s as LocationState
-  if (s.pack && s.cards) return { type: 'footballer', pityCounter: 0, nextPityCounter: 0, ...(s as object) } as LocationState
+  if (s.type === 'coach' && typeof s.coach === 'object' && s.coach !== null) {
+    return { type: 'coach', coach: s.coach } as LocationState
+  }
+  if (s.pack && Array.isArray(s.cards)) {
+    return {
+      type: 'footballer',
+      pack: s.pack,
+      cards: s.cards,
+      pityCounter: typeof s.pityCounter === 'number' ? s.pityCounter : 0,
+      nextPityCounter: typeof s.nextPityCounter === 'number' ? s.nextPityCounter : 0,
+    } as LocationState
+  }
   return null
 }
 

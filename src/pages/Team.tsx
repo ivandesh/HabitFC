@@ -1,6 +1,6 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useAppStore } from '../store/useAppStore'
-import { footballers } from '../data/footballers'
+import { footballers, footballerMap, playerOverall } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
@@ -8,27 +8,8 @@ import type { AppState, Position, Footballer } from '../types'
 import { coaches as allCoaches } from '../data/coaches'
 import { computeCoachChemistryPct, getCoachLevel, applyCoachStatBoost } from '../lib/coachPerks'
 import { CoachCard } from '../components/cards/CoachCard'
+import { POS_UA, rarityRing, emptyBorder, PlayerPhoto, PitchSVG } from '../components/pitch/PitchHelpers'
 import type { FormationSlot } from '../lib/formations'
-
-const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
-
-const rarityRing: Record<string, string> = {
-  common:    'ring-gray-400/70',
-  rare:      'ring-blue-400/80',
-  epic:      'ring-pink-500/80',
-  legendary: 'ring-yellow-400/90',
-}
-
-const emptyBorder: Record<Position, string> = {
-  GK:  'border-yellow-400/50 text-yellow-400/70',
-  DEF: 'border-blue-400/50 text-blue-400/70',
-  MID: 'border-green-400/50 text-green-400/70',
-  FWD: 'border-red-400/50 text-red-400/70',
-}
-
-function playerOverall(f: typeof footballers[0]) {
-  return Math.round((f.stats.pace + f.stats.shooting + f.stats.passing + f.stats.dribbling) / 4)
-}
 
 function StatBar({ label, value }: { label: string; value: number }) {
   return (
@@ -45,30 +26,6 @@ function StatBar({ label, value }: { label: string; value: number }) {
   )
 }
 
-function PitchSVG() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {[0,1,2,3,4,5,6,7].map(i => (
-        <rect key={i} x="0" y={i * 50} width="300" height="50"
-          fill={i % 2 === 0 ? 'transparent' : 'black'} fillOpacity="0.06" />
-      ))}
-      <rect x="12" y="12" width="276" height="376" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      <line x1="12" y1="200" x2="288" y2="200" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      <circle cx="150" cy="200" r="46" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      <circle cx="150" cy="200" r="2.5" fill="white" fillOpacity="0.3" />
-      <rect x="72" y="12" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      <rect x="108" y="12" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
-      <rect x="126" y="6" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
-      <rect x="72" y="324" width="156" height="64" stroke="white" strokeOpacity="0.18" strokeWidth="1.5" />
-      <rect x="108" y="362" width="84" height="26" stroke="white" strokeOpacity="0.12" strokeWidth="1" />
-      <rect x="126" y="382" width="48" height="12" stroke="white" strokeOpacity="0.18" strokeWidth="1" />
-      <circle cx="150" cy="60" r="2.5" fill="white" fillOpacity="0.3" />
-      <circle cx="150" cy="340" r="2.5" fill="white" fillOpacity="0.3" />
-      <path d="M 100 76 A 50 50 0 0 0 200 76" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
-      <path d="M 100 324 A 50 50 0 0 1 200 324" stroke="white" strokeOpacity="0.12" strokeWidth="1" fill="none" />
-    </svg>
-  )
-}
 
 interface ChemLink {
   from: number
@@ -82,7 +39,7 @@ function getChemistryLinks(
   _slots: FormationSlot[]
 ): ChemLink[] {
   const links: ChemLink[] = []
-  const players = squad.map(id => id ? footballers.find(f => f.id === id) ?? null : null)
+  const players = squad.map(id => id ? footballerMap.get(id) ?? null : null)
 
   for (let i = 0; i < players.length; i++) {
     for (let j = i + 1; j < players.length; j++) {
@@ -141,19 +98,6 @@ function computeChemistryDelta(
   return newPct - currentPct
 }
 
-function PlayerPhoto({ footballer }: { footballer: typeof footballers[0] }) {
-  return footballer.photoUrl ? (
-    <img
-      src={`${import.meta.env.BASE_URL}${footballer.photoUrl.replace(/^\//, '')}`}
-      alt={footballer.name}
-      className="w-full h-full object-contain"
-      onError={(e) => { (e.target as HTMLImageElement).style.display = 'none' }}
-    />
-  ) : (
-    <div className="w-full h-full flex items-center justify-center text-lg">{footballer.emoji}</div>
-  )
-}
-
 type PanelMode = 'idle' | 'pick' | 'stats'
 
 export function Team() {
@@ -183,7 +127,7 @@ export function Team() {
   const filledPlayers = useMemo(() =>
     squad
       .filter((id): id is string => id !== null)
-      .map(id => footballers.find(f => f.id === id)!)
+      .map(id => footballerMap.get(id)!)
       .filter(Boolean),
     [squad]
   )
@@ -213,6 +157,18 @@ export function Team() {
   }
 
   const chemLinks = useMemo(() => getChemistryLinks(squad, SLOTS), [squad, SLOTS])
+
+  // Escape key closes modals/panels
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') {
+        if (coachPickerOpen) setCoachPickerOpen(false)
+        else if (panelMode !== 'idle') closePanel()
+      }
+    }
+    document.addEventListener('keydown', handleKey)
+    return () => document.removeEventListener('keydown', handleKey)
+  }, [coachPickerOpen, panelMode])
 
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
@@ -268,7 +224,7 @@ export function Team() {
   }
 
   const activePlayer = activeSlot !== null && panelMode === 'stats'
-    ? footballers.find(f => f.id === squad[activeSlot]) ?? null
+    ? (squad[activeSlot] ? footballerMap.get(squad[activeSlot]!) ?? null : null)
     : null
 
   return (
@@ -420,7 +376,7 @@ export function Team() {
             <ChemistryLines links={chemLinks} slots={SLOTS} />
             {SLOTS.map((slot, idx) => {
               const footballerId = squad[idx] ?? null
-              const footballer = footballerId ? footballers.find(f => f.id === footballerId) ?? null : null
+              const footballer = footballerId ? footballerMap.get(footballerId) ?? null : null
               const isActive = activeSlot === idx
 
               return (
@@ -643,7 +599,7 @@ export function Team() {
                   <div className="text-xs text-[#5A7090] uppercase tracking-wider mb-3 font-oswald">Склад</div>
                   {SLOTS.map((slot, idx) => {
                     const id = squad[idx] ?? null
-                    const f = id ? footballers.find(p => p.id === id) ?? null : null
+                    const f = id ? footballerMap.get(id) ?? null : null
                     if (!f) return null
                     return (
                       <div key={idx} className="flex items-center gap-3 bg-[#0D1520] rounded-xl px-3 py-2">
