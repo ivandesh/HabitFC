@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Challenge, Match, SquadSnapshot, MatchEvent, MatchResult } from '../types'
+import type { Challenge, Match, SquadSnapshot, MatchEvent, MatchResult, ChallengeStatus } from '../types'
 
 // ─── Row → Domain Mappers ───────────────────────────────────────────────────
 
@@ -7,7 +7,7 @@ interface ChallengeRow {
   id: string
   challenger_id: string
   challenged_id: string
-  status: string
+  status: ChallengeStatus
   challenger_squad: Challenge['challengerSquad']
   created_at: string
   expires_at: string

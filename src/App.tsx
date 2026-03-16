@@ -13,7 +13,6 @@ import { Team } from './pages/Team'
 import { Achievements } from './pages/Achievements'
 import { LoginPage } from './pages/LoginPage'
 import { AuthGuard } from './components/AuthGuard'
-import { useAppStore } from './store/useAppStore'
 import { useAuthStore } from './store/useAuthStore'
 import { Friends } from './pages/Friends'
 import { FriendProfile } from './pages/FriendProfile'
@@ -58,8 +57,6 @@ const ProfileIcon = () => (
 )
 
 function NavBar() {
-  const resetAll = useAppStore(state => state.resetAll)
-  const importState = useAppStore(state => state.importState)
   const { signOut } = useAuthStore()
   const [profileOpen, setProfileOpen] = useState(false)
   const unwatchedCount = useContext(UnwatchedCountContext)
@@ -70,59 +67,6 @@ function NavBar() {
         ? 'text-[#00E676] border-[#00E676]'
         : 'text-[#5A7090] border-transparent hover:text-[#E8F0FF] hover:border-[#1A2336]'
     }`
-
-  function handleReset() {
-    if (window.confirm('Скинути весь прогрес? Це видалить усі звички, монети та картки.')) {
-      resetAll()
-    }
-  }
-
-  function handleExport() {
-    const state = useAppStore.getState()
-    const data = {
-      coins: state.coins,
-      habits: state.habits,
-      collection: state.collection,
-      pullHistory: state.pullHistory,
-      squad: state.squad,
-      achievements: state.achievements,
-      totalCompletions: state.totalCompletions,
-      formation: state.formation,
-      pityCounters: state.pityCounters,
-      coachCollection: state.coachCollection,
-      assignedCoach: state.assignedCoach,
-    }
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `habitfc-backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
-
-  function handleImport() {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = '.json,application/json'
-    input.onchange = () => {
-      const file = input.files?.[0]
-      if (!file) return
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        try {
-          const data = JSON.parse(e.target?.result as string)
-          if (window.confirm('Замінити поточні дані імпортованими? Поточний прогрес буде втрачено.')) {
-            importState(data)
-          }
-        } catch {
-          alert('Помилка: невалідний файл резервної копії.')
-        }
-      }
-      reader.readAsText(file)
-    }
-    input.click()
-  }
 
   return (
     <>
