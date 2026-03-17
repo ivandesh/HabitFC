@@ -10,7 +10,6 @@ import {
   fetchChallenges,
   fetchMatchHistory as apiFetchMatchHistory,
   hasClaimedReward as apiHasClaimedReward,
-  hasPendingChallenge as apiHasPendingChallenge,
   createMatch,
   expireChallenges,
   fetchUnwatchedMatches,
