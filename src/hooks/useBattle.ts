@@ -88,14 +88,9 @@ export function useBattle() {
       maxHabitStreak: Math.max(0, ...(fs.habits ?? []).map((h: { streak: number }) => h.streak)),
     }
 
-    // Create challenge record (auto-accepted)
-    await apiSendChallenge(userId, friendId, mySnap)
-    // Get the pending challenge to get its ID
-    const challenges = await fetchChallenges(userId)
-    const challenge = challenges.find(c => c.challengerId === userId && c.challengedId === friendId && c.status === 'pending')
-    if (challenge) {
-      await apiAcceptChallenge(challenge.id)
-    }
+    // Create challenge record and immediately accept it
+    const challenge = await apiSendChallenge(userId, friendId, mySnap)
+    await apiAcceptChallenge(challenge.id)
 
     // Simulate match
     const matchSeed = `${userId}-${friendId}-${Date.now()}`
@@ -116,7 +111,7 @@ export function useBattle() {
     }
 
     const match = await createMatch({
-      challengeId: challenge?.id ?? '',
+      challengeId: challenge.id,
       challengerId: userId,
       challengedId: friendId,
       challengerSquad: mySnap,
@@ -235,10 +230,6 @@ export function useBattle() {
     const friendFilled = (friendState.squad ?? []).filter((id: string | null) => id !== null).length
     if (friendFilled < 11) return { canChallenge: false, reason: 'У друга неповний склад' }
     if (!friendState.assignedCoach) return { canChallenge: false, reason: 'У друга немає тренера' }
-
-    // Check pending challenge
-    const pending = await apiHasPendingChallenge(userId, friendId)
-    if (pending) return { canChallenge: false, reason: 'Виклик вже відправлено' }
 
     return { canChallenge: true }
   }

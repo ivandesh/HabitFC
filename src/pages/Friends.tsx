@@ -142,6 +142,83 @@ export function Friends() {
         </button>
       </div>
 
+      {/* Search */}
+      <div className="mb-6">
+        <input
+          type="text"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          placeholder="Пошук за ім'ям..."
+          className="w-full bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 text-sm text-white placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
+        />
+        {searchLoading && (
+          <p className="text-[#5A7090] text-xs mt-2 font-oswald tracking-wider">ПОШУК...</p>
+        )}
+        {!searchLoading && query.length >= 2 && searchResults.length === 0 && (
+          <p className="text-[#5A7090] text-xs mt-2">Нікого не знайдено</p>
+        )}
+        {searchResults.length > 0 && (
+          <div className="mt-3 space-y-2">
+            {searchResults.map(row => (
+              <div
+                key={row.user_id}
+                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl cursor-pointer hover:border-[#00E676]/30 transition-colors"
+                onClick={() => navigate(`/profile/${row.user_id}`)}
+              >
+                <AvatarSmall url={row.avatar_url} emoji={row.avatar_emoji} />
+                <span className="flex-1 font-oswald font-bold text-white text-sm">{row.username}</span>
+                <button
+                  onClick={e => { e.stopPropagation(); handleToggleFollow(row.user_id) }}
+                  className={`px-3 py-1 rounded-lg font-oswald text-xs font-bold transition-colors cursor-pointer ${
+                    followingSet.has(row.user_id)
+                      ? 'bg-[#1A2336] text-[#5A7090] hover:text-red-400'
+                      : 'bg-[#00E676]/10 border border-[#00E676]/40 text-[#00E676] hover:bg-[#00E676]/20'
+                  }`}
+                >
+                  {followingSet.has(row.user_id) ? 'Відписатись' : 'Слідкувати'}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Following list with Challenge buttons */}
+      <div className="mb-6">
+        <div className="font-oswald text-xs text-[#5A7090] uppercase tracking-widest mb-3">
+          Відстежую · {following.length}
+        </div>
+        {following.length === 0 ? (
+          <p className="text-[#5A7090] text-sm">Ви ще нікого не відстежуєте</p>
+        ) : (
+          <div className="space-y-2">
+            {followingProfiles.map(row => (
+              <div
+                key={row.user_id}
+                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl cursor-pointer hover:border-[#00E676]/30 transition-colors"
+                onClick={() => navigate(`/profile/${row.user_id}`)}
+              >
+                <AvatarSmall url={row.avatar_url} emoji={row.avatar_emoji} />
+                <span className="flex-1 font-oswald font-bold text-white text-sm">{row.username}</span>
+                <button
+                  onClick={e => { e.stopPropagation(); handleSendChallenge(row.user_id) }}
+                  disabled={challengeLoading === row.user_id}
+                  className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg font-oswald text-xs font-bold hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 mr-1"
+                >
+                  {challengeLoading === row.user_id ? '...' : '⚔️'}
+                </button>
+                <button
+                  onClick={e => { e.stopPropagation(); handleToggleFollow(row.user_id) }}
+                  className="px-3 py-1 rounded-lg font-oswald text-xs font-bold transition-colors cursor-pointer bg-[#1A2336] text-[#5A7090] hover:text-red-400"
+                >
+                  Відписатись
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Match History */}
       {battle.matchHistory.length > 0 && (
         <div className="mb-6">
@@ -192,83 +269,6 @@ export function Friends() {
           </div>
         </div>
       )}
-
-      {/* Search */}
-      <div className="mb-6">
-        <input
-          type="text"
-          value={query}
-          onChange={e => setQuery(e.target.value)}
-          placeholder="Пошук за ім'ям..."
-          className="w-full bg-[#0A0F1A] border border-[#1A2336] rounded-xl px-4 py-3 text-sm text-white placeholder-[#5A7090] focus:outline-none focus:border-[#00E676] transition-colors"
-        />
-        {searchLoading && (
-          <p className="text-[#5A7090] text-xs mt-2 font-oswald tracking-wider">ПОШУК...</p>
-        )}
-        {!searchLoading && query.length >= 2 && searchResults.length === 0 && (
-          <p className="text-[#5A7090] text-xs mt-2">Нікого не знайдено</p>
-        )}
-        {searchResults.length > 0 && (
-          <div className="mt-3 space-y-2">
-            {searchResults.map(row => (
-              <div
-                key={row.user_id}
-                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl cursor-pointer hover:border-[#00E676]/30 transition-colors"
-                onClick={() => navigate(`/profile/${row.user_id}`)}
-              >
-                <AvatarSmall url={row.avatar_url} emoji={row.avatar_emoji} />
-                <span className="flex-1 font-oswald font-bold text-white text-sm">{row.username}</span>
-                <button
-                  onClick={e => { e.stopPropagation(); handleToggleFollow(row.user_id) }}
-                  className={`px-3 py-1 rounded-lg font-oswald text-xs font-bold transition-colors cursor-pointer ${
-                    followingSet.has(row.user_id)
-                      ? 'bg-[#1A2336] text-[#5A7090] hover:text-red-400'
-                      : 'bg-[#00E676]/10 border border-[#00E676]/40 text-[#00E676] hover:bg-[#00E676]/20'
-                  }`}
-                >
-                  {followingSet.has(row.user_id) ? 'Відписатись' : 'Слідкувати'}
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Following list with Challenge buttons */}
-      <div>
-        <div className="font-oswald text-xs text-[#5A7090] uppercase tracking-widest mb-3">
-          Відстежую · {following.length}
-        </div>
-        {following.length === 0 ? (
-          <p className="text-[#5A7090] text-sm">Ви ще нікого не відстежуєте</p>
-        ) : (
-          <div className="space-y-2">
-            {followingProfiles.map(row => (
-              <div
-                key={row.user_id}
-                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl cursor-pointer hover:border-[#00E676]/30 transition-colors"
-                onClick={() => navigate(`/profile/${row.user_id}`)}
-              >
-                <AvatarSmall url={row.avatar_url} emoji={row.avatar_emoji} />
-                <span className="flex-1 font-oswald font-bold text-white text-sm">{row.username}</span>
-                <button
-                  onClick={e => { e.stopPropagation(); handleSendChallenge(row.user_id) }}
-                  disabled={challengeLoading === row.user_id}
-                  className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-400 rounded-lg font-oswald text-xs font-bold hover:bg-red-500/20 transition-colors cursor-pointer disabled:opacity-50 mr-1"
-                >
-                  {challengeLoading === row.user_id ? '...' : '⚔️'}
-                </button>
-                <button
-                  onClick={e => { e.stopPropagation(); handleToggleFollow(row.user_id) }}
-                  className="px-3 py-1 rounded-lg font-oswald text-xs font-bold transition-colors cursor-pointer bg-[#1A2336] text-[#5A7090] hover:text-red-400"
-                >
-                  Відписатись
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
 
       {profileOpen && <ProfileModal onClose={() => setProfileOpen(false)} />}
     </div>
