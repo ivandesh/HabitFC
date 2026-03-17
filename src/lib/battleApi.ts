@@ -161,25 +161,27 @@ export async function createMatch(params: {
   result: MatchResult
   coinsAwardedTo: string[]
 }): Promise<Match> {
+  const row: Record<string, unknown> = {
+    challenger_id: params.challengerId,
+    challenged_id: params.challengedId,
+    challenger_squad: params.challengerSquad,
+    challenged_squad: params.challengedSquad,
+    match_seed: params.matchSeed,
+    events: params.events,
+    score_home: params.scoreHome,
+    score_away: params.scoreAway,
+    result: params.result,
+    coins_awarded_to: params.coinsAwardedTo,
+  }
+  if (params.challengeId) row.challenge_id = params.challengeId
+
   const { data, error } = await supabase
     .from('matches')
-    .insert({
-      challenge_id: params.challengeId || null,
-      challenger_id: params.challengerId,
-      challenged_id: params.challengedId,
-      challenger_squad: params.challengerSquad,
-      challenged_squad: params.challengedSquad,
-      match_seed: params.matchSeed,
-      events: params.events,
-      score_home: params.scoreHome,
-      score_away: params.scoreAway,
-      result: params.result,
-      coins_awarded_to: params.coinsAwardedTo,
-    })
+    .insert(row)
     .select()
     .single()
   if (error) throw error
-  return toMatch(data)
+  return toMatch(data as MatchRow)
 }
 
 export async function fetchMatchHistory(

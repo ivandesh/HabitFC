@@ -97,8 +97,9 @@ export function Friends() {
       })
       setViewerTeam('home')
       setActiveMatch(match)
-    } catch {
-      alert('Помилка відправки виклику')
+    } catch (err) {
+      console.error('Battle error:', err)
+      alert(`Помилка: ${err instanceof Error ? err.message : String(err)}`)
     } finally {
       setChallengeLoading(null)
     }
