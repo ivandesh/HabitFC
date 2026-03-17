@@ -310,32 +310,6 @@ export function Friends() {
         </div>
       )}
 
-      {/* Unwatched matches */}
-      {battle.unwatchedMatches.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <div className="font-oswald text-xs text-yellow-400 uppercase tracking-widest">
-            Нові матчі
-          </div>
-          {battle.unwatchedMatches.map(match => {
-            const opponentId = match.challengerId === user?.id ? match.challengedId : match.challengerId
-            const opponent = followingProfiles.find(p => p.user_id === opponentId)
-            return (
-              <div
-                key={match.id}
-                onClick={() => handleWatchMatch(match)}
-                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-yellow-400/30 rounded-xl cursor-pointer hover:border-yellow-400/60 transition-colors"
-              >
-                <span className="text-xl">⚽</span>
-                <span className="flex-1 text-sm text-white">
-                  vs <span className="font-bold">{opponent?.username ?? 'Суперник'}</span>
-                </span>
-                <span className="font-oswald text-xs text-yellow-400 tracking-wider">ДИВИТИСЬ</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
       {/* Match History */}
       {battle.matchHistory.length > 0 && (
         <div className="mb-6">
