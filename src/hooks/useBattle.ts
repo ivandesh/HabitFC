@@ -87,11 +87,7 @@ export function useBattle() {
       maxHabitStreak: Math.max(0, ...(fs.habits ?? []).map((h: { streak: number }) => h.streak)),
     }
 
-    // Create challenge record and immediately accept it
-    const challenge = await apiSendChallenge(userId, friendId, mySnap)
-    await apiAcceptChallenge(challenge.id)
-
-    // Simulate match
+    // Simulate match directly (no challenge record needed)
     const matchSeed = `${userId}-${friendId}-${Date.now()}`
     const rng = createRng(hashSeed(matchSeed))
     const sim = simulateMatch(mySnap, opponentSnap, rng)
@@ -110,7 +106,7 @@ export function useBattle() {
     }
 
     const match = await createMatch({
-      challengeId: challenge.id,
+      challengeId: null,
       challengerId: userId,
       challengedId: friendId,
       challengerSquad: mySnap,

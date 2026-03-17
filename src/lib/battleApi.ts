@@ -149,7 +149,7 @@ export async function expireChallenges(userId: string): Promise<void> {
 // ─── Matches ────────────────────────────────────────────────────────────────
 
 export async function createMatch(params: {
-  challengeId: string
+  challengeId: string | null
   challengerId: string
   challengedId: string
   challengerSquad: SquadSnapshot
@@ -164,7 +164,7 @@ export async function createMatch(params: {
   const { data, error } = await supabase
     .from('matches')
     .insert({
-      challenge_id: params.challengeId,
+      challenge_id: params.challengeId || null,
       challenger_id: params.challengerId,
       challenged_id: params.challengedId,
       challenger_squad: params.challengerSquad,
