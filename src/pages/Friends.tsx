@@ -6,7 +6,7 @@ import { searchUsers, fetchFollowingProfiles, type ProfileRow } from '../lib/pro
 import { ProfileModal } from '../components/ui/ProfileModal'
 import { MatchLive } from '../components/battle/MatchLive'
 import { useBattle } from '../hooks/useBattle'
-import type { Match, Challenge } from '../types'
+import type { Match } from '../types'
 
 function AvatarSmall({ url, emoji }: { url: string | null; emoji: string | null }) {
   if (url) return <img src={url} alt="avatar" className="w-9 h-9 rounded-full object-cover bg-[#0A0F1A]" />
@@ -15,14 +15,6 @@ function AvatarSmall({ url, emoji }: { url: string | null; emoji: string | null 
       {emoji ?? '👤'}
     </div>
   )
-}
-
-function TimeLeft({ expiresAt }: { expiresAt: string }) {
-  const ms = new Date(expiresAt).getTime() - Date.now()
-  if (ms <= 0) return <span className="text-red-400 text-xs">Закінчився</span>
-  const hours = Math.floor(ms / 3600000)
-  const mins = Math.floor((ms % 3600000) / 60000)
-  return <span className="text-[#5A7090] text-xs">{hours}г {mins}хв</span>
 }
 
 export function Friends() {
@@ -97,42 +89,19 @@ export function Friends() {
         alert(check.reason)
         return
       }
-      await battle.sendChallenge(friendId)
+      const match = await battle.challengeAndSimulate(friendId)
+      const opponent = followingProfiles.find(p => p.user_id === friendId)
+      setActiveMatchNames({
+        home: 'Ви',
+        away: opponent?.username ?? 'Суперник',
+      })
+      setViewerTeam('home')
+      setActiveMatch(match)
     } catch {
       alert('Помилка відправки виклику')
     } finally {
       setChallengeLoading(null)
     }
-  }
-
-  async function handleAccept(challenge: Challenge) {
-    setChallengeLoading(challenge.id)
-    try {
-      const match = await battle.acceptChallengeAndSimulate(challenge)
-      // Find names
-      const challengerProfile = followingProfiles.find(p => p.user_id === challenge.challengerId)
-      setActiveMatchNames({
-        home: challengerProfile?.username ?? 'Суперник',
-        away: 'Ви',
-      })
-      setViewerTeam('away')
-      setActiveMatch(match)
-    } catch {
-      alert('Помилка прийняття виклику')
-    } finally {
-      setChallengeLoading(null)
-    }
-  }
-
-  function handleWatchUnwatched(match: Match) {
-    const opponentId = match.challengerId === user?.id ? match.challengedId : match.challengerId
-    const opponentProfile = followingProfiles.find(p => p.user_id === opponentId)
-    setActiveMatchNames({
-      home: match.challengerId === user?.id ? 'Ви' : (opponentProfile?.username ?? 'Суперник'),
-      away: match.challengedId === user?.id ? 'Ви' : (opponentProfile?.username ?? 'Суперник'),
-    })
-    setViewerTeam(match.challengerId === user?.id ? 'home' : 'away')
-    setActiveMatch(match)
   }
 
   function handleMatchFinish() {
@@ -172,93 +141,6 @@ export function Friends() {
           👤
         </button>
       </div>
-
-      {/* Unwatched matches notification */}
-      {battle.unwatchedMatches.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <div className="font-oswald text-xs text-yellow-400 uppercase tracking-widest">
-            ⚔️ Матч готовий!
-          </div>
-          {battle.unwatchedMatches.map(match => {
-            const opponentId = match.challengerId === user?.id ? match.challengedId : match.challengerId
-            const opponent = followingProfiles.find(p => p.user_id === opponentId)
-            return (
-              <div
-                key={match.id}
-                onClick={() => handleWatchUnwatched(match)}
-                className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-yellow-400/30 rounded-xl cursor-pointer hover:border-yellow-400/60 transition-colors"
-              >
-                <span className="text-xl">⚽</span>
-                <span className="flex-1 text-sm text-white">
-                  vs <span className="font-bold">{opponent?.username ?? 'Суперник'}</span>
-                </span>
-                <span className="font-oswald text-xs text-yellow-400 tracking-wider">ДИВИТИСЬ</span>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Incoming challenges */}
-      {battle.incomingChallenges.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <div className="font-oswald text-xs text-[#00E676] uppercase tracking-widest">
-            📥 Вхідні виклики
-          </div>
-          {battle.incomingChallenges.map(ch => {
-            const challenger = followingProfiles.find(p => p.user_id === ch.challengerId)
-            return (
-              <div key={ch.id} className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl">
-                <AvatarSmall url={challenger?.avatar_url ?? null} emoji={challenger?.avatar_emoji ?? null} />
-                <div className="flex-1">
-                  <div className="text-sm text-white font-bold">{challenger?.username ?? 'Гравець'}</div>
-                  <TimeLeft expiresAt={ch.expiresAt} />
-                </div>
-                <button
-                  onClick={() => handleAccept(ch)}
-                  disabled={challengeLoading === ch.id}
-                  className="px-3 py-1.5 bg-[#00E676]/10 border border-[#00E676]/40 text-[#00E676] rounded-lg font-oswald text-xs font-bold hover:bg-[#00E676]/20 transition-colors cursor-pointer disabled:opacity-50"
-                >
-                  {challengeLoading === ch.id ? '...' : 'ПРИЙНЯТИ'}
-                </button>
-                <button
-                  onClick={() => battle.declineChallenge(ch.id)}
-                  className="px-3 py-1.5 bg-[#1A2336] text-[#5A7090] rounded-lg font-oswald text-xs font-bold hover:text-red-400 transition-colors cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      )}
-
-      {/* Outgoing challenges */}
-      {battle.outgoingChallenges.length > 0 && (
-        <div className="mb-4 space-y-2">
-          <div className="font-oswald text-xs text-[#5A7090] uppercase tracking-widest">
-            📤 Відправлені виклики
-          </div>
-          {battle.outgoingChallenges.map(ch => {
-            const challenged = followingProfiles.find(p => p.user_id === ch.challengedId)
-            return (
-              <div key={ch.id} className="flex items-center gap-3 px-4 py-3 bg-[#0A0F1A] border border-[#1A2336] rounded-xl">
-                <AvatarSmall url={challenged?.avatar_url ?? null} emoji={challenged?.avatar_emoji ?? null} />
-                <div className="flex-1">
-                  <div className="text-sm text-white">{challenged?.username ?? 'Гравець'}</div>
-                  <TimeLeft expiresAt={ch.expiresAt} />
-                </div>
-                <button
-                  onClick={() => battle.cancelChallenge(ch.id)}
-                  className="px-3 py-1.5 bg-[#1A2336] text-[#5A7090] rounded-lg font-oswald text-xs font-bold hover:text-red-400 transition-colors cursor-pointer"
-                >
-                  СКАСУВАТИ
-                </button>
-              </div>
-            )
-          })}
-        </div>
-      )}
 
       {/* Match History */}
       {battle.matchHistory.length > 0 && (

@@ -231,7 +231,15 @@ export function simulateMatch(
   const awayStrength = calcTeamStrength(awaySnap, homeSnap.formation, false, rng)
 
   const totalStrength = homeStrength.strength + awayStrength.strength
-  const homeRatio = totalStrength > 0 ? homeStrength.strength / totalStrength : 0.5
+  const rawHomeRatio = totalStrength > 0 ? homeStrength.strength / totalStrength : 0.5
+
+  // Upset factor: flatten the ratio toward 50/50 so weaker teams can win
+  // Also add a per-match random swing for "having a great day"
+  const upsetFlatten = 0.35  // pulls ratio toward 0.5
+  const matchSwing = (rng.next() - 0.5) * 0.20  // ±10% random shift
+  const homeRatio = Math.max(0.15, Math.min(0.85,
+    rawHomeRatio * (1 - upsetFlatten) + 0.5 * upsetFlatten + matchSwing
+  ))
 
   const events: import('../types').MatchEvent[] = []
   let scoreHome = 0
