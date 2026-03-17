@@ -1,9 +1,6 @@
-import { useEffect, useState, createContext, useContext } from 'react'
+import { useEffect, useState } from 'react'
 import { BrowserRouter, Routes, Route, NavLink, useLocation } from 'react-router-dom'
-import { useUnwatchedCount } from './hooks/useUnwatchedCount'
 import { ErrorBoundary } from './components/ErrorBoundary'
-
-const UnwatchedCountContext = createContext(0)
 import { AchievementToastManager } from './components/ui/AchievementToast'
 import { Dashboard } from './pages/Dashboard'
 import { Shop } from './pages/Shop'
@@ -59,8 +56,6 @@ const ProfileIcon = () => (
 function NavBar() {
   const { signOut } = useAuthStore()
   const [profileOpen, setProfileOpen] = useState(false)
-  const unwatchedCount = useContext(UnwatchedCountContext)
-
   const linkClass = ({ isActive }: { isActive: boolean }) =>
     `px-4 py-4 font-oswald font-semibold text-sm tracking-widest uppercase transition-all border-b-2 shrink-0 ${
       isActive
@@ -101,14 +96,7 @@ function NavBar() {
           <NavLink to="/collection" className={linkClass}>Колекція</NavLink>
           <NavLink to="/team" className={linkClass}>Склад</NavLink>
           <NavLink to="/achievements" className={linkClass}>Досягнення</NavLink>
-          <NavLink to="/friends" className={linkClass}>
-            <span className="relative">
-              Друзі
-              {unwatchedCount > 0 && (
-                <span className="absolute -top-1 -right-3 w-2 h-2 bg-yellow-400 rounded-full" />
-              )}
-            </span>
-          </NavLink>
+          <NavLink to="/friends" className={linkClass}>Друзі</NavLink>
           <div className="ml-auto flex items-center gap-1 shrink-0">
             <button
               onClick={() => setProfileOpen(true)}
@@ -140,7 +128,6 @@ function ScrollToTop() {
 
 function BottomNav() {
   const { pathname } = useLocation()
-  const unwatchedCount = useContext(UnwatchedCountContext)
   if (pathname === '/open' || pathname.startsWith('/profile/')) return null
 
   const tabClass = ({ isActive }: { isActive: boolean }) =>
@@ -173,12 +160,7 @@ function BottomNav() {
           <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Здобутки</span>
         </NavLink>
         <NavLink to="/friends" className={tabClass}>
-          <div className="relative">
-            <FriendsIcon />
-            {unwatchedCount > 0 && (
-              <div className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-yellow-400 rounded-full" />
-            )}
-          </div>
+          <FriendsIcon />
           <span className="font-oswald text-[9px] tracking-widest uppercase leading-none">Друзі</span>
         </NavLink>
       </div>
@@ -187,28 +169,25 @@ function BottomNav() {
 }
 
 function AuthenticatedApp() {
-  const unwatchedCount = useUnwatchedCount()
   return (
-    <UnwatchedCountContext.Provider value={unwatchedCount}>
-      <div className="min-h-screen bg-[#04060A] stadium-lines">
-        <ScrollToTop />
-        <AchievementToastManager />
-        <NavBar />
-        <div className="pb-14 sm:pb-0">
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/shop" element={<Shop />} />
-            <Route path="/open" element={<PackOpening />} />
-            <Route path="/collection" element={<Collection />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/achievements" element={<Achievements />} />
-            <Route path="/friends" element={<Friends />} />
-            <Route path="/profile/:userId" element={<FriendProfile />} />
-          </Routes>
-        </div>
-        <BottomNav />
+    <div className="min-h-screen bg-[#04060A] stadium-lines">
+      <ScrollToTop />
+      <AchievementToastManager />
+      <NavBar />
+      <div className="pb-14 sm:pb-0">
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/shop" element={<Shop />} />
+          <Route path="/open" element={<PackOpening />} />
+          <Route path="/collection" element={<Collection />} />
+          <Route path="/team" element={<Team />} />
+          <Route path="/achievements" element={<Achievements />} />
+          <Route path="/friends" element={<Friends />} />
+          <Route path="/profile/:userId" element={<FriendProfile />} />
+        </Routes>
       </div>
-    </UnwatchedCountContext.Provider>
+      <BottomNav />
+    </div>
   )
 }
 
