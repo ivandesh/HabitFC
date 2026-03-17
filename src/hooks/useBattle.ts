@@ -10,6 +10,7 @@ import {
   fetchChallenges,
   fetchMatchHistory as apiFetchMatchHistory,
   hasClaimedReward as apiHasClaimedReward,
+  hasPendingChallenge as apiHasPendingChallenge,
   createMatch,
   expireChallenges,
   fetchUnwatchedMatches,
@@ -67,60 +68,6 @@ export function useBattle() {
     const snap = buildMySnapshot()
     await apiSendChallenge(userId, friendId, snap)
     await refresh()
-  }
-
-  /** Send challenge, auto-simulate, and create match immediately */
-  async function challengeAndSimulate(friendId: string): Promise<Match> {
-    if (!userId) throw new Error('Not logged in')
-
-    const mySnap = buildMySnapshot()
-
-    // Fetch opponent's squad from their profile
-    const profile = await fetchUserProfile(friendId)
-    if (!profile) throw new Error('Профіль не знайдено')
-    const fs = profile.state
-    const opponentSnap: SquadSnapshot = {
-      squad: (fs.squad ?? []).filter((id: string | null): id is string => id !== null),
-      formation: fs.formation ?? '4-3-3',
-      coachId: fs.assignedCoach ?? '',
-      coachLevel: fs.assignedCoach ? ((fs.coachCollection ?? {})[fs.assignedCoach] ?? 1) : 1,
-      maxHabitStreak: Math.max(0, ...(fs.habits ?? []).map((h: { streak: number }) => h.streak)),
-    }
-
-    // Simulate match directly (no challenge record needed)
-    const matchSeed = `${userId}-${friendId}-${Date.now()}`
-    const rng = createRng(hashSeed(matchSeed))
-    const sim = simulateMatch(mySnap, opponentSnap, rng)
-
-    // Coin rewards
-    const coinsAwardedTo: string[] = []
-    const myClaimed = await apiHasClaimedReward(userId, friendId)
-    if (!myClaimed) {
-      if (sim.result === 'home_win') {
-        coinsAwardedTo.push(userId)
-        useAppStore.getState().addCoins(100)
-      } else if (sim.result === 'draw') {
-        coinsAwardedTo.push(userId)
-        useAppStore.getState().addCoins(50)
-      }
-    }
-
-    const match = await createMatch({
-      challengeId: null,
-      challengerId: userId,
-      challengedId: friendId,
-      challengerSquad: mySnap,
-      challengedSquad: opponentSnap,
-      matchSeed,
-      events: sim.events,
-      scoreHome: sim.scoreHome,
-      scoreAway: sim.scoreAway,
-      result: sim.result,
-      coinsAwardedTo,
-    })
-
-    await refresh()
-    return match
   }
 
   async function cancelChallenge(challengeId: string) {
@@ -226,6 +173,9 @@ export function useBattle() {
     if (friendFilled < 11) return { canChallenge: false, reason: 'У друга неповний склад' }
     if (!friendState.assignedCoach) return { canChallenge: false, reason: 'У друга немає тренера' }
 
+    const pending = await apiHasPendingChallenge(userId, friendId)
+    if (pending) return { canChallenge: false, reason: 'Виклик вже відправлено' }
+
     return { canChallenge: true }
   }
 
@@ -239,7 +189,6 @@ export function useBattle() {
     cancelChallenge,
     declineChallenge,
     acceptChallengeAndSimulate,
-    challengeAndSimulate,
     markMatchWatched,
     canChallenge,
     incomingChallenges: challenges.filter(c => c.challengedId === userId),
