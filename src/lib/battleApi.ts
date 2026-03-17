@@ -212,7 +212,7 @@ export async function hasClaimedReward(
     )
   if (error) throw error
   return (data ?? []).some(row =>
-    (row.coins_awarded_to as string[]).includes(userId)
+    (row.coins_awarded_to as string[] | null)?.includes(userId) ?? false
   )
 }
 

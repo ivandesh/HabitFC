@@ -97,9 +97,12 @@ export function Friends() {
       })
       setViewerTeam('home')
       setActiveMatch(match)
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Battle error:', err)
-      alert(`Помилка: ${err instanceof Error ? err.message : String(err)}`)
+      const msg = err instanceof Error ? err.message
+        : (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>).message)
+        : JSON.stringify(err)
+      alert(`Помилка: ${msg}`)
     } finally {
       setChallengeLoading(null)
     }
