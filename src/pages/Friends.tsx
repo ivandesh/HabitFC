@@ -99,9 +99,8 @@ export function Friends() {
       setActiveMatch(match)
     } catch (err: unknown) {
       console.error('Battle error:', err)
-      const msg = err instanceof Error ? err.message
-        : (typeof err === 'object' && err !== null && 'message' in err) ? String((err as Record<string, unknown>).message)
-        : JSON.stringify(err)
+      let msg: string
+      try { msg = JSON.stringify(err, null, 2) } catch { msg = String(err) }
       alert(`Помилка: ${msg}`)
     } finally {
       setChallengeLoading(null)
