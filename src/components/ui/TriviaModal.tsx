@@ -14,7 +14,7 @@ function pickQuestion(history: number[]): TriviaQuestion {
   return pool[Math.floor(Math.random() * pool.length)]
 }
 
-export default function TriviaModal({ onClose }: Props) {
+export function TriviaModal({ onClose }: Props) {
   const triviaHistory = useAppStore(s => s.triviaHistory)
   const answerTrivia = useAppStore(s => s.answerTrivia)
 

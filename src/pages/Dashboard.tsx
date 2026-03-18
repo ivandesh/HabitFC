@@ -1,13 +1,25 @@
+import { useState, useEffect } from 'react'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { HabitList } from '../components/habits/HabitList'
+import { TriviaModal } from '../components/ui/TriviaModal'
 import { useAppStore } from '../store/useAppStore'
 import { footballers } from '../data/footballers'
+import { getToday } from '../lib/streaks'
 
 export function Dashboard() {
   const collection = useAppStore(state => state.collection)
+  const lastTriviaDate = useAppStore(state => state.lastTriviaDate)
   const owned = Object.keys(collection).length
   const total = footballers.length
   const pct = total > 0 ? Math.round((owned / total) * 100) : 0
+
+  const [showTrivia, setShowTrivia] = useState(false)
+
+  useEffect(() => {
+    if (lastTriviaDate !== getToday()) {
+      setShowTrivia(true)
+    }
+  }, [])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-5 sm:py-8 space-y-5 sm:space-y-8">
@@ -47,6 +59,8 @@ export function Dashboard() {
       </div>
 
       <HabitList />
+
+      {showTrivia && <TriviaModal onClose={() => setShowTrivia(false)} />}
     </div>
   )
 }
