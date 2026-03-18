@@ -199,15 +199,19 @@ export async function fetchMatchHistory(
 /** Check if first-match reward has been claimed against a specific opponent */
 export async function hasClaimedReward(
   userId: string,
-  opponentId: string,
+  _opponentId: string,
 ): Promise<boolean> {
+  // Check if user already earned coins from ANY match today
+  const todayStart = new Date()
+  todayStart.setHours(0, 0, 0, 0)
+
   const { data, error } = await supabase
     .from('matches')
     .select('coins_awarded_to')
     .or(
-      `and(challenger_id.eq.${userId},challenged_id.eq.${opponentId}),` +
-      `and(challenger_id.eq.${opponentId},challenged_id.eq.${userId})`
+      `challenger_id.eq.${userId},challenged_id.eq.${userId}`
     )
+    .gte('created_at', todayStart.toISOString())
   if (error) throw error
   return (data ?? []).some(row =>
     (row.coins_awarded_to as string[] | null)?.includes(userId) ?? false
