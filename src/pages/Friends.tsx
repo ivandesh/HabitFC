@@ -116,8 +116,8 @@ export function Friends() {
       })
       setViewerTeam('away')
       setActiveMatch(match)
-    } catch {
-      alert('Помилка прийняття виклику')
+    } catch (e) {
+      alert('Помилка прийняття виклику: ' + (e instanceof Error ? e.message : JSON.stringify(e)))
     } finally {
       setChallengeLoading(null)
     }
