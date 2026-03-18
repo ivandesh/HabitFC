@@ -9,6 +9,7 @@ import { getToday } from '../lib/streaks'
 export function Dashboard() {
   const collection = useAppStore(state => state.collection)
   const lastTriviaDate = useAppStore(state => state.lastTriviaDate)
+  const stateLoaded = useAppStore(state => state._stateLoaded)
   const owned = Object.keys(collection).length
   const total = footballers.length
   const pct = total > 0 ? Math.round((owned / total) * 100) : 0
@@ -16,10 +17,10 @@ export function Dashboard() {
   const [showTrivia, setShowTrivia] = useState(false)
 
   useEffect(() => {
-    if (lastTriviaDate !== getToday()) {
+    if (stateLoaded && lastTriviaDate !== getToday()) {
       setShowTrivia(true)
     }
-  }, [])
+  }, [stateLoaded])
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-5 sm:py-8 space-y-5 sm:space-y-8">

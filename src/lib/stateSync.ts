@@ -1,7 +1,7 @@
 import { supabase } from './supabase'
 import type { AppState } from '../types'
 
-const EXCLUDED_KEYS: (keyof AppState)[] = ['pendingUnlocks']
+const EXCLUDED_KEYS: string[] = ['pendingUnlocks', '_stateLoaded']
 
 function serializeState(state: AppState): Record<string, unknown> {
   const result: Record<string, unknown> = { ...state }

@@ -36,6 +36,8 @@ interface AppStore extends AppState {
   setFormation: (formation: string) => void
   setFollowing: (ids: string[]) => void
   answerTrivia: (questionId: number, correct: boolean) => void
+  // Non-persisted UI state
+  _stateLoaded: boolean
 }
 
 export const useAppStore = create<AppStore>()((set, get) => ({
@@ -55,6 +57,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       following: [],
       lastTriviaDate: null,
       triviaHistory: [],
+      _stateLoaded: false,
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -262,6 +265,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           following: data.following ?? [],
           lastTriviaDate: data.lastTriviaDate ?? null,
           triviaHistory: data.triviaHistory ?? [],
+          _stateLoaded: true,
         })
       },
 
