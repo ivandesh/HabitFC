@@ -211,7 +211,7 @@ export async function hasClaimedReward(
     .or(
       `challenger_id.eq.${userId},challenged_id.eq.${userId}`
     )
-    .gte('created_at', todayStart.toISOString())
+    .gte('played_at', todayStart.toISOString())
   if (error) throw error
   return (data ?? []).some(row =>
     (row.coins_awarded_to as string[] | null)?.includes(userId) ?? false
