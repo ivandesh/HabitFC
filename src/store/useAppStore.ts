@@ -35,6 +35,7 @@ interface AppStore extends AppState {
   drainPendingUnlock: () => string | undefined
   setFormation: (formation: string) => void
   setFollowing: (ids: string[]) => void
+  answerTrivia: (questionId: number, correct: boolean) => void
 }
 
 export const useAppStore = create<AppStore>()((set, get) => ({
@@ -52,6 +53,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       coachCollection: {},
       assignedCoach: null,
       following: [],
+      lastTriviaDate: null,
+      triviaHistory: [],
 
       addHabit: (habitData) => {
         const habit: Habit = {
@@ -196,6 +199,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         return { isLevelUp, newLevel, refundCoins, newUnlockIds }
       },
 
+      answerTrivia: (questionId, correct) => {
+        set(state => ({
+          lastTriviaDate: getToday(),
+          triviaHistory: [...state.triviaHistory, questionId],
+          coins: correct ? state.coins + 50 : state.coins,
+        }))
+      },
+
       addCoins: (amount) => {
         set(state => ({ coins: state.coins + amount }))
       },
@@ -228,6 +239,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           coachCollection: {},
           assignedCoach: null,
           following: [],
+          lastTriviaDate: null,
+          triviaHistory: [],
         })
       },
 
@@ -247,6 +260,8 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           coachCollection: data.coachCollection ?? {},
           assignedCoach: data.assignedCoach ?? null,
           following: data.following ?? [],
+          lastTriviaDate: data.lastTriviaDate ?? null,
+          triviaHistory: data.triviaHistory ?? [],
         })
       },
 

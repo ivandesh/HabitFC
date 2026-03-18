@@ -46,6 +46,8 @@ export interface AppState {
   coachCollection: Record<string, number>   // coachId → copies owned
   assignedCoach: string | null
   following: string[]           // user_ids this user follows
+  lastTriviaDate: string | null       // YYYY-MM-DD of last answered trivia
+  triviaHistory: number[]             // IDs of previously answered questions
 }
 
 export type CoachPerkType =
