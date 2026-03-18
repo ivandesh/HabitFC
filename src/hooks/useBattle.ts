@@ -45,7 +45,24 @@ export function useBattle() {
       setMatchHistory(mh)
       // Filter to truly unwatched
       const watched = getWatchedSet()
-      setUnwatchedMatches(uw.filter(m => !watched.has(m.id)))
+      const newUnwatched = uw.filter(m => !watched.has(m.id))
+      setUnwatchedMatches(newUnwatched)
+
+      // Auto-claim coins for challenger from unwatched matches
+      for (const match of newUnwatched) {
+        if (match.coinsAwardedTo.includes(userId)) {
+          if (match.result === 'home_win') {
+            useAppStore.getState().addCoins(100)
+          } else if (match.result === 'draw') {
+            useAppStore.getState().addCoins(50)
+          }
+          // Mark as watched so coins aren't double-claimed
+          markWatched(match.id)
+        }
+      }
+      // Update unwatched list after claiming
+      const watchedAfterClaim = getWatchedSet()
+      setUnwatchedMatches(newUnwatched.filter(m => !watchedAfterClaim.has(m.id)))
     } catch { /* silent */ }
     setLoading(false)
   }, [userId])
@@ -98,10 +115,10 @@ export function useBattle() {
       rng,
     )
 
-    // 5. Determine coin rewards (both players can earn on draw)
+    // 5. Determine coin rewards — once per day per player
     const coinsAwardedTo: string[] = []
 
-    // Acceptor (me = away team)
+    // Acceptor (me = away team): win or draw earns coins
     const myClaimed = await apiHasClaimedReward(userId, challenge.challengerId)
     if (!myClaimed) {
       if (sim.result === 'away_win') {
@@ -113,13 +130,14 @@ export function useBattle() {
       }
     }
 
-    // Challenger (home team) — coins awarded when they watch the replay
+    // Challenger (home team): win or draw earns coins (recorded for their next load)
     const challengerClaimed = await apiHasClaimedReward(challenge.challengerId, userId)
     if (!challengerClaimed) {
       if (sim.result === 'home_win' || sim.result === 'draw') {
         coinsAwardedTo.push(challenge.challengerId)
       }
     }
+
 
     // 6. Store match in DB
     const match = await createMatch({
@@ -142,17 +160,6 @@ export function useBattle() {
 
   function markMatchWatched(matchId: string) {
     markWatched(matchId)
-
-    // Award coins to challenger when they watch for the first time (unwatched only)
-    const match = unwatchedMatches.find(m => m.id === matchId)
-    if (match && match.coinsAwardedTo.includes(userId)) {
-      if (match.result === 'home_win') {
-        useAppStore.getState().addCoins(100)
-      } else if (match.result === 'draw') {
-        useAppStore.getState().addCoins(50)
-      }
-    }
-
     setUnwatchedMatches(prev => prev.filter(m => m.id !== matchId))
   }
 

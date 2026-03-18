@@ -755,7 +755,8 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
               <div className="font-oswald text-xl sm:text-2xl text-white mb-4">
                 {scoreHome} — {scoreAway}
               </div>
-              {match.coinsAwardedTo.length > 0 && (
+              {((viewerTeam === 'away' && (match.result === 'away_win' || match.result === 'draw')) ||
+                (viewerTeam === 'home' && (match.result === 'home_win' || match.result === 'draw'))) && (
                 <div className="text-[#00E676] text-sm mb-4">
                   +{match.result === 'draw' ? 50 : 100} 🪙
                 </div>
