@@ -470,3 +470,175 @@ export function playFinalWhistle() {
     }
   } catch { /* audio blocked */ }
 }
+
+// ─── Battle: Short whistle — foul call ──────────────────────────────────────
+export function playWhistleShort() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const osc = ac.createOscillator()
+    const g = vol(ac)
+    osc.connect(g); g.connect(ac.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(3200, t)
+    osc.frequency.linearRampToValueAtTime(2600, t + 0.12)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.22, t + 0.008)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+    osc.start(t); osc.stop(t + 0.18)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Tension build — rising rumble for cinematic setup ──────────────
+export function playTensionBuild() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const src = ac.createBufferSource()
+    src.buffer = noise(ac, 2.0)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'; bp.Q.value = 1.5
+    bp.frequency.setValueAtTime(80, t)
+    bp.frequency.exponentialRampToValueAtTime(400, t + 1.8)
+    const g = vol(ac)
+    src.connect(bp); bp.connect(g); g.connect(ac.destination)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.12, t + 0.5)
+    g.gain.linearRampToValueAtTime(0.25, t + 1.5)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.9)
+    src.start(t); src.stop(t + 2.0)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Kick impact — ball strike thud ─────────────────────────────────
+export function playKickImpact() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const osc = ac.createOscillator()
+    const g = vol(ac)
+    osc.connect(g); g.connect(ac.destination)
+    osc.type = 'sine'
+    osc.frequency.setValueAtTime(150, t)
+    osc.frequency.exponentialRampToValueAtTime(50, t + 0.1)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.4, t + 0.005)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.15)
+    osc.start(t); osc.stop(t + 0.18)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: VAR beep — electronic check sequence ──────────────────────────
+export function playVarBeep() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const freqs = [800, 1000, 1200]
+    freqs.forEach((freq, i) => {
+      const osc = ac.createOscillator()
+      const g = vol(ac)
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'square'
+      osc.frequency.value = freq
+      const s = t + i * 0.15
+      g.gain.setValueAtTime(0, s)
+      g.gain.linearRampToValueAtTime(0.08, s + 0.005)
+      g.gain.setValueAtTime(0.08, s + 0.08)
+      g.gain.exponentialRampToValueAtTime(0.001, s + 0.12)
+      osc.start(s); osc.stop(s + 0.13)
+    })
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Crowd groan — VAR disallowed / disappointment ─────────────────
+export function playCrowdGroan() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const src = ac.createBufferSource()
+    src.buffer = noise(ac, 0.8)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'
+    bp.frequency.setValueAtTime(600, t)
+    bp.frequency.exponentialRampToValueAtTime(200, t + 0.6)
+    bp.Q.value = 1.2
+    const g = vol(ac)
+    src.connect(bp); bp.connect(g); g.connect(ac.destination)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.25, t + 0.05)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.7)
+    src.start(t); src.stop(t + 0.8)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Substitution — whistle + applause ─────────────────────────────
+export function playSubstitution() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+
+    // Quick whistle
+    const osc = ac.createOscillator()
+    const wg = vol(ac)
+    osc.connect(wg); wg.connect(ac.destination)
+    osc.type = 'sine'
+    osc.frequency.value = 2800
+    wg.gain.setValueAtTime(0, t)
+    wg.gain.linearRampToValueAtTime(0.12, t + 0.01)
+    wg.gain.exponentialRampToValueAtTime(0.001, t + 0.1)
+    osc.start(t); osc.stop(t + 0.12)
+
+    // Light applause (high-passed noise)
+    const clap = ac.createBufferSource()
+    clap.buffer = noise(ac, 0.6)
+    const hp = ac.createBiquadFilter()
+    hp.type = 'highpass'; hp.frequency.value = 2500
+    const cg = vol(ac)
+    clap.connect(hp); hp.connect(cg); cg.connect(ac.destination)
+    cg.gain.setValueAtTime(0, t + 0.1)
+    cg.gain.linearRampToValueAtTime(0.08, t + 0.15)
+    cg.gain.exponentialRampToValueAtTime(0.001, t + 0.6)
+    clap.start(t + 0.1); clap.stop(t + 0.65)
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Counterattack — rising tempo clicks ────────────────────────────
+export function playCounterattackBuild() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    // 6 clicks accelerating (intervals: 0.15, 0.12, 0.10, 0.08, 0.06)
+    const offsets = [0, 0.15, 0.27, 0.37, 0.45, 0.51]
+    offsets.forEach((off, i) => {
+      const osc = ac.createOscillator()
+      const g = vol(ac)
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'sine'
+      osc.frequency.value = 400 + i * 80
+      const s = t + off
+      g.gain.setValueAtTime(0, s)
+      g.gain.linearRampToValueAtTime(0.06 + i * 0.02, s + 0.003)
+      g.gain.exponentialRampToValueAtTime(0.001, s + 0.06)
+      osc.start(s); osc.stop(s + 0.07)
+    })
+  } catch { /* audio blocked */ }
+}
+
+// ─── Battle: Crowd roar — VAR confirmed / celebration ──────────────────────
+export function playCrowdRoar() {
+  try {
+    const ac = getCtx()
+    const t = ac.currentTime
+    const src = ac.createBufferSource()
+    src.buffer = noise(ac, 1.2)
+    const bp = ac.createBiquadFilter()
+    bp.type = 'bandpass'; bp.frequency.value = 500; bp.Q.value = 0.8
+    const g = vol(ac)
+    src.connect(bp); bp.connect(g); g.connect(ac.destination)
+    g.gain.setValueAtTime(0, t)
+    g.gain.linearRampToValueAtTime(0.3, t + 0.05)
+    g.gain.setValueAtTime(0.3, t + 0.3)
+    g.gain.exponentialRampToValueAtTime(0.001, t + 1.1)
+    src.start(t); src.stop(t + 1.2)
+  } catch { /* audio blocked */ }
+}
