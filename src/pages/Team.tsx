@@ -378,6 +378,7 @@ export function Team() {
               const footballerId = squad[idx] ?? null
               const footballer = footballerId ? footballerMap.get(footballerId) ?? null : null
               const isActive = activeSlot === idx
+              const playerHasCoachChem = footballer !== null && assignedCoachObj !== null && assignedCoachObj.clubs.includes(footballer.club)
 
               return (
                 <div
@@ -389,10 +390,17 @@ export function Team() {
                   {footballer ? (
                     <div className="flex flex-col items-center gap-0.5">
                       {/* Slot size: 40px on mobile, 64px on sm+ */}
-                      <div
-                        className={`relative w-10 h-10 sm:w-16 sm:h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
-                      >
-                        <PlayerPhoto footballer={footballer} />
+                      <div className="relative">
+                        <div
+                          className={`w-10 h-10 sm:w-16 sm:h-16 rounded-full ring-2 overflow-hidden bg-[#0A0F1A] transition-all ${rarityRing[footballer.rarity]} ${isActive ? '!ring-[#00E676] scale-110' : 'hover:scale-105'}`}
+                        >
+                          <PlayerPhoto footballer={footballer} />
+                        </div>
+                        {playerHasCoachChem && (
+                          <div className="absolute -top-2 -right-2 sm:-top-2.5 sm:-right-2.5 text-lg sm:text-2xl z-10 drop-shadow-md" title="Хімія з тренером">
+                            🎯
+                          </div>
+                        )}
                       </div>
                       <div className="text-[9px] sm:text-[11px] text-white/85 font-bold leading-none max-w-[3rem] sm:max-w-[4.5rem] text-center truncate drop-shadow">
                         {footballer.name.split(' ').slice(-1)[0]}
@@ -452,6 +460,14 @@ export function Team() {
               )}
             </div>
           )}
+          {assignedCoachObj && coachChemPct > 0 && (
+            <div className="flex justify-center gap-4 mt-2 text-[10px]">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[9px]">🎯</span>
+                <span className="text-[#5A7090] font-oswald">Хімія тренера +{coachChemPct}%</span>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Right panel — desktop: right column; mobile: fixed bottom sheet when active */}
@@ -459,6 +475,12 @@ export function Team() {
 
           {/* ── Active panels (stats / pick) ── */}
           {panelMode !== 'idle' && (
+            <>
+            {/* Backdrop — mobile only, closes panel on tap */}
+            <div
+              className="fixed inset-0 z-40 sm:hidden"
+              onClick={closePanel}
+            />
             <div
               className="
                 fixed left-0 right-0 z-50
@@ -548,6 +570,9 @@ export function Team() {
                           const chemDelta = !inSquad && activeSlot !== null
                             ? computeChemistryDelta(squad, activeSlot, f.id)
                             : 0
+                          const hasCoachChem = !inSquad && assignedCoachObj !== null && assignedCoachObj.clubs.includes(f.club)
+                          const coachChemDelta = hasCoachChem ? 5 : 0
+                          const totalDelta = chemDelta + coachChemDelta
                           return (
                             <button
                               key={f.id}
@@ -556,14 +581,21 @@ export function Team() {
                               className={`relative flex flex-col items-center gap-1 p-2 rounded-xl border transition-all text-left ${
                                 inSquad
                                   ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
-                                  : chemDelta > 0
+                                  : totalDelta > 0
                                     ? 'border-[#FBBF24]/40 bg-[#FBBF24]/5 hover:border-[#FBBF24]/70 hover:bg-[#FBBF24]/10 cursor-pointer active:scale-95'
-                                    : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
+                                    : hasCoachChem
+                                      ? 'border-[#FBBF24]/30 bg-[#FBBF24]/5 hover:border-[#FBBF24]/50 cursor-pointer active:scale-95'
+                                      : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
                               }`}
                             >
-                              {chemDelta > 0 && (
+                              {totalDelta > 0 && (
                                 <div className="absolute -top-1.5 -right-1.5 bg-[#FBBF24] text-[#04060A] text-[9px] font-oswald font-bold px-1.5 py-0.5 rounded-full leading-none z-10">
-                                  +{chemDelta}%
+                                  +{totalDelta}%
+                                </div>
+                              )}
+                              {hasCoachChem && (
+                                <div className="absolute -top-2 -left-2 text-lg z-10 drop-shadow-md" title="Хімія з тренером">
+                                  🎯
                                 </div>
                               )}
                               <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
@@ -585,6 +617,7 @@ export function Team() {
 
               </div>
             </div>
+            </>
           )}
 
           {/* ── Idle: squad summary ── always in normal flow */}
