@@ -16,7 +16,7 @@ import {
   fetchUnwatchedMatches,
 } from '../lib/battleApi'
 import { fetchUserProfile } from '../lib/profileSync'
-import { simulateMatch } from '../lib/battleEngine'
+import { simulateMatch, pickAutoBench } from '../lib/battleEngine'
 import { createRng, hashSeed } from '../lib/seededRng'
 import { getWatchedSet, markWatched } from '../lib/watchedMatches'
 
@@ -71,12 +71,14 @@ export function useBattle() {
 
   function buildMySnapshot(): SquadSnapshot {
     const s = state()
+    const squadIds = s.squad.filter((id): id is string => id !== null)
     return {
-      squad: s.squad.filter((id): id is string => id !== null),
+      squad: squadIds,
       formation: s.formation,
       coachId: s.assignedCoach ?? '',
       coachLevel: s.assignedCoach ? (s.coachCollection[s.assignedCoach] ?? 1) : 1,
       maxHabitStreak: Math.max(0, ...s.habits.map(h => h.streak)),
+      bench: pickAutoBench(Object.keys(s.collection), squadIds),
     }
   }
 

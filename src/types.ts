@@ -103,6 +103,7 @@ export interface SquadSnapshot {
   coachId: string
   coachLevel: number
   maxHabitStreak: number
+  bench?: string[]          // 0-3 auto-picked player IDs (absent in old matches)
 }
 
 export type ChallengeStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
@@ -125,6 +126,17 @@ export type MatchEventType =
   | 'great_save'
   | 'on_fire'
   | 'momentum_shift'
+  | 'penalty'
+  | 'free_kick'
+  | 'corner'
+  | 'counterattack'
+  | 'var_review'
+  | 'substitution'
+
+export interface MatchEventPhase {
+  phase: string
+  duration: number  // seconds
+}
 
 export interface MatchEvent {
   minute: number
@@ -132,6 +144,9 @@ export interface MatchEvent {
   team: 'home' | 'away'
   playerId: string
   description: string
+  phases?: MatchEventPhase[]           // cinematic sequence
+  varOutcome?: 'confirmed' | 'disallowed'  // only on var_review
+  subInPlayerId?: string               // only on substitution (playerId = leaving, subInPlayerId = entering)
 }
 
 export type MatchResult = 'home_win' | 'away_win' | 'draw'

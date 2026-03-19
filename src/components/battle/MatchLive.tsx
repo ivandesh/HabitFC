@@ -1,16 +1,22 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Match, MatchEvent, Footballer } from '../../types'
+import { buildPlayerStats, calcRating } from '../../lib/playerRating'
+import type { PlayerMatchStats } from '../../lib/playerRating'
 import { footballerMap } from '../../data/footballers'
 import { FORMATIONS } from '../../lib/formations'
+import { CinematicOverlay } from './CinematicOverlay'
 import {
   playGoal, playYellowCard, playRedCard,
   playNearMiss, playGreatSave, playFinalWhistle,
+  playSubstitution,
 } from '../../lib/sounds'
 
 const EVENT_ICONS: Record<string, string> = {
   goal: '⚽', yellow_card: '🟨', red_card: '🟥',
   near_miss: '💨', great_save: '🧤', on_fire: '🔥', momentum_shift: '🔄',
+  penalty: '🎯', free_kick: '🎯', corner: '🚩', counterattack: '⚡',
+  var_review: '📺', substitution: '🔄',
 }
 
 const SOUND_MAP: Record<string, (() => void) | undefined> = {
@@ -19,7 +25,10 @@ const SOUND_MAP: Record<string, (() => void) | undefined> = {
   red_card: playRedCard,
   near_miss: playNearMiss,
   great_save: playGreatSave,
+  substitution: playSubstitution,
 }
+
+const CINEMATIC_TYPES = new Set(['penalty', 'free_kick', 'corner', 'counterattack', 'var_review'])
 
 function getPlayer(id: string): Footballer | undefined {
   return footballerMap.get(id)
@@ -32,54 +41,6 @@ function getPlayerName(id: string): string {
 function getLastName(name: string): string {
   const parts = name.split(' ')
   return parts[parts.length - 1]
-}
-
-// ─── Player stats tracking ──────────────────────────────────────────────────
-
-interface PlayerMatchStats {
-  goals: number
-  yellowCards: number
-  redCards: number
-  nearMisses: number
-  greatSaves: number
-  onFire: boolean
-}
-
-function buildPlayerStats(events: MatchEvent[]): Record<string, PlayerMatchStats> {
-  const stats: Record<string, PlayerMatchStats> = {}
-  const ensure = (id: string) => {
-    if (!id) return
-    if (!stats[id]) stats[id] = { goals: 0, yellowCards: 0, redCards: 0, nearMisses: 0, greatSaves: 0, onFire: false }
-  }
-  for (const ev of events) {
-    if (!ev.playerId) continue
-    ensure(ev.playerId)
-    const s = stats[ev.playerId]
-    if (!s) continue
-    switch (ev.type) {
-      case 'goal': s.goals++; break
-      case 'yellow_card': s.yellowCards++; break
-      case 'red_card': s.redCards++; break
-      case 'near_miss': s.nearMisses++; break
-      case 'great_save': s.greatSaves++; break
-      case 'on_fire': s.onFire = true; break
-    }
-  }
-  return stats
-}
-
-/** Simple rating 5.0-10.0 based on match contributions */
-function calcRating(playerId: string, stats: Record<string, PlayerMatchStats>): number {
-  const s = stats[playerId]
-  let rating = 6.5 // base
-  if (!s) return rating
-  rating += s.goals * 1.0
-  rating += s.greatSaves * 0.6
-  rating += s.nearMisses * 0.2
-  rating -= s.yellowCards * 0.3
-  rating -= s.redCards * 1.0
-  if (s.onFire) rating += 0.4
-  return Math.max(5.0, Math.min(10.0, Math.round(rating * 10) / 10))
 }
 
 // ─── Pitch ball position logic ──────────────────────────────────────────────
@@ -290,6 +251,9 @@ function MatchPitch({
   awayPlayers,
   playerStats,
   showBadges,
+  cinematicEvent,
+  cinematicPhaseIndex,
+  onPhaseComplete,
 }: {
   ball: BallState
   isFinished: boolean
@@ -297,6 +261,9 @@ function MatchPitch({
   awayPlayers: PitchPlayer[]
   playerStats: Record<string, PlayerMatchStats>
   showBadges: boolean
+  cinematicEvent?: MatchEvent | null
+  cinematicPhaseIndex?: number
+  onPhaseComplete?: () => void
 }) {
   const pulseColor = ball.pulse === 'goal' ? 'rgba(0,230,118,0.8)'
     : ball.pulse === 'danger' ? 'rgba(255,107,107,0.6)'
@@ -379,7 +346,7 @@ function MatchPitch({
       </AnimatePresence>
 
       {/* Ball */}
-      {!isFinished && (
+      {!isFinished && !cinematicEvent && (
         <motion.div
           className="absolute pointer-events-none"
           style={{ transform: 'translate(-50%, -50%)', zIndex: 25 }}
@@ -403,6 +370,13 @@ function MatchPitch({
           }} />
         </motion.div>
       )}
+
+      {/* Cinematic Overlay */}
+      <CinematicOverlay
+        event={cinematicEvent ?? null}
+        phaseIndex={cinematicPhaseIndex ?? 0}
+        onPhaseComplete={onPhaseComplete ?? (() => {})}
+      />
 
       {/* Status label */}
       <AnimatePresence mode="wait">
@@ -437,12 +411,18 @@ function PostMatchLineup({
   squadIds,
   formation,
   playerStats,
+  bench,
+  matchEvents,
+  team,
 }: {
   title: string
   titleColor: string
   squadIds: string[]
   formation: string
   playerStats: Record<string, PlayerMatchStats>
+  bench?: string[]
+  matchEvents?: MatchEvent[]
+  team?: 'home' | 'away'
 }) {
   const formDef = FORMATIONS[formation]
 
@@ -466,9 +446,12 @@ function PostMatchLineup({
             : rating >= 7 ? 'text-yellow-400'
             : rating < 6 ? 'text-red-400'
             : 'text-[#8A9BBF]'
+          const subOutEvent = matchEvents?.find(
+            e => e.type === 'substitution' && e.playerId === id && (!team || e.team === team)
+          )
 
           return (
-            <div key={id} className="flex items-center gap-2 py-1">
+            <div key={id} className={`flex items-center gap-2 py-1 ${subOutEvent ? 'opacity-60' : ''}`}>
               {/* Position tag */}
               <span className="font-oswald text-[9px] text-[#5A7090] w-6 text-center shrink-0">
                 {formDef?.slots[i]?.pos ?? player.position}
@@ -489,6 +472,13 @@ function PostMatchLineup({
               <span className="flex-1 text-xs text-white truncate">
                 {player.name}
               </span>
+
+              {/* Sub-out indicator */}
+              {subOutEvent && (
+                <span className="font-oswald text-[10px] text-red-400 shrink-0">
+                  ↓ {subOutEvent.minute}'
+                </span>
+              )}
 
               {/* Event badges */}
               <div className="flex items-center gap-0.5 shrink-0">
@@ -516,6 +506,54 @@ function PostMatchLineup({
           )
         })}
       </div>
+
+      {/* Bench section */}
+      {bench && bench.length > 0 && (
+        <>
+          <div className="mt-3 pt-3 border-t border-[#1A2336]">
+            <div className="font-oswald text-[9px] text-[#5A7090] uppercase tracking-widest mb-2">
+              Лава
+            </div>
+          </div>
+          <div className="space-y-1">
+            {bench.map(id => {
+              const player = getPlayer(id)
+              if (!player) return null
+
+              const subEvent = matchEvents?.find(
+                e => e.type === 'substitution' && e.subInPlayerId === id && (!team || e.team === team)
+              )
+              const subMinute = subEvent?.minute
+              const wasUsed = !!subEvent
+
+              return (
+                <div key={id} className={`flex items-center gap-2 py-1 ${!wasUsed ? 'opacity-40' : ''}`}>
+                  <span className="font-oswald text-[9px] text-[#5A7090] w-6 text-center shrink-0">
+                    {player.position}
+                  </span>
+                  <div className="w-7 h-7 rounded-full overflow-hidden bg-[#1A2336] border border-[#2A3346] shrink-0">
+                    {player.photoUrl ? (
+                      <img src={`${import.meta.env.BASE_URL}${player.photoUrl.replace(/^\//, '')}`} alt="" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-xs">
+                        {player.emoji}
+                      </div>
+                    )}
+                  </div>
+                  <span className="flex-1 text-xs text-white truncate">
+                    {player.name}
+                  </span>
+                  {wasUsed && (
+                    <span className="font-oswald text-[10px] text-[#00E676]">
+                      ↑ {subMinute}'
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
     </div>
   )
 }
@@ -537,13 +575,64 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
   const [scoreAway, setScoreAway] = useState(0)
   const [isFinished, setIsFinished] = useState(false)
   const [isHalfTime, setIsHalfTime] = useState(false)
+  const [cinematicEvent, setCinematicEvent] = useState<MatchEvent | null>(null)
+  const [cinematicPhaseIndex, setCinematicPhaseIndex] = useState(0)
+  const cinematicQueueRef = useRef<MatchEvent[]>([])
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const eventsEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const lastProcessedMinute = useRef(0)
 
+  // Cleanup queue timers on unmount
+  useEffect(() => () => clearTimeout(queueTimerRef.current), [])
+
   const tick = useCallback(() => {
     setCurrentMinute(prev => Math.min(prev + 1, 91))
   }, [])
+
+  const startNextFromQueue = useCallback(() => {
+    const queue = cinematicQueueRef.current
+    if (queue.length === 0) {
+      setCinematicEvent(null)
+      return
+    }
+    const next = queue.shift()!
+    if (next.phases && next.phases.length > 0 && CINEMATIC_TYPES.has(next.type)) {
+      // It's a cinematic event — show overlay
+      setCinematicEvent(next)
+      setCinematicPhaseIndex(0)
+      // Also add to visible events for commentary
+      setVisibleEvents(ve => [...ve, next])
+    } else {
+      // It's a regular event (outcome after cinematic) — process normally
+      setVisibleEvents(ve => [...ve, next])
+      SOUND_MAP[next.type]?.()
+      if (next.type === 'goal') {
+        if (next.team === 'home') setScoreHome(s => s + 1)
+        else setScoreAway(s => s + 1)
+      }
+      if (next.type === 'var_review' && next.varOutcome === 'disallowed') {
+        if (next.team === 'home') setScoreHome(s => s - 1)
+        else setScoreAway(s => s - 1)
+      }
+      // Process next in queue immediately (with a tiny delay for visual effect)
+      queueTimerRef.current = setTimeout(startNextFromQueue, 300)
+    }
+  }, [])
+
+  const handlePhaseComplete = useCallback(() => {
+    if (!cinematicEvent?.phases) return
+    const nextPhase = cinematicPhaseIndex + 1
+    if (nextPhase < cinematicEvent.phases.length) {
+      setCinematicPhaseIndex(nextPhase)
+    } else {
+      // Cinematic sequence complete — process next from queue
+      setCinematicEvent(null)
+      setCinematicPhaseIndex(0)
+      // Small delay before processing next event
+      queueTimerRef.current = setTimeout(startNextFromQueue, 200)
+    }
+  }, [cinematicEvent, cinematicPhaseIndex, startNextFromQueue])
 
   useEffect(() => {
     if (currentMinute === 0 || currentMinute <= lastProcessedMinute.current) return
@@ -556,7 +645,26 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
     }
 
     const minuteEvents = match.events.filter(e => e.minute === currentMinute)
-    if (minuteEvents.length > 0) {
+    if (minuteEvents.length === 0) {
+      if (currentMinute === 45) {
+        setIsHalfTime(true)
+        setTimeout(() => setIsHalfTime(false), 2000)
+      }
+      return
+    }
+
+    // Check if any events are cinematic
+    const hasCinematic = minuteEvents.some(ev => ev.phases && ev.phases.length > 0 && CINEMATIC_TYPES.has(ev.type))
+
+    if (hasCinematic) {
+      // Queue ALL events for this minute — cinematics play as overlay,
+      // others process after their preceding cinematic finishes
+      cinematicQueueRef.current = [...cinematicQueueRef.current, ...minuteEvents]
+      if (!cinematicEvent) {
+        startNextFromQueue()
+      }
+    } else {
+      // No cinematics — process all immediately (existing behavior)
       setVisibleEvents(ve => [...ve, ...minuteEvents])
       for (const ev of minuteEvents) {
         SOUND_MAP[ev.type]?.()
@@ -564,22 +672,28 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
           if (ev.team === 'home') setScoreHome(s => s + 1)
           else setScoreAway(s => s + 1)
         }
+        if (ev.type === 'var_review' && ev.varOutcome === 'disallowed') {
+          if (ev.team === 'home') setScoreHome(s => s - 1)
+          else setScoreAway(s => s - 1)
+        }
       }
     }
 
     if (currentMinute === 45) {
       setIsHalfTime(true)
-      setTimeout(() => setIsHalfTime(false), 1500)
+      setTimeout(() => setIsHalfTime(false), 2000)
     }
-  }, [currentMinute, match.events])
+  }, [currentMinute, match.events, cinematicEvent, startNextFromQueue])
 
   useEffect(() => {
     if (isFinished || isHalfTime || currentMinute > 90) return
+    if (cinematicEvent) return  // freeze timer during cinematic
+    if (cinematicQueueRef.current.length > 0) return  // also freeze while queue is draining
     const hasEvent = match.events.some(e => e.minute === currentMinute + 1)
     const delay = hasEvent ? 800 : 250
     timerRef.current = setTimeout(tick, delay)
     return () => clearTimeout(timerRef.current)
-  }, [currentMinute, isFinished, isHalfTime, tick, match.events])
+  }, [currentMinute, isFinished, isHalfTime, tick, match.events, cinematicEvent])
 
   useEffect(() => {
     eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -641,9 +755,19 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
             </span>
             <span className="shrink-0">{EVENT_ICONS[ev.type]}</span>
             <span>
-              {ev.type === 'momentum_shift' ? (
+              {ev.type === 'substitution' ? (
+                <>
+                  <span className="text-red-400">↓ {getPlayerName(ev.playerId)}</span>
+                  {' '}
+                  <span className="text-[#00E676]">↑ {getPlayerName(ev.subInPlayerId ?? '')}</span>
+                </>
+              ) : ev.type === 'momentum_shift' ? (
                 <span className={ev.team === 'home' ? 'text-[#00E676]' : 'text-red-400'}>
                   {ev.team === 'home' ? homeName : awayName} {ev.description}
+                </span>
+              ) : ev.type === 'var_review' ? (
+                <span className={ev.varOutcome === 'confirmed' ? 'text-[#00E676]' : 'text-red-400'}>
+                  {ev.description}
                 </span>
               ) : (
                 <>
@@ -708,6 +832,9 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
               awayPlayers={awayPitchPlayers}
               playerStats={playerStats}
               showBadges={true}
+              cinematicEvent={cinematicEvent}
+              cinematicPhaseIndex={cinematicPhaseIndex}
+              onPhaseComplete={handlePhaseComplete}
             />
             {eventFeed}
           </div>
@@ -721,6 +848,9 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
               awayPlayers={awayPitchPlayers}
               playerStats={playerStats}
               showBadges={true}
+              cinematicEvent={cinematicEvent}
+              cinematicPhaseIndex={cinematicPhaseIndex}
+              onPhaseComplete={handlePhaseComplete}
             />
             {eventFeed}
           </div>
@@ -771,6 +901,9 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
                 squadIds={match.challengerSquad.squad}
                 formation={match.challengerSquad.formation}
                 playerStats={fullPlayerStats}
+                bench={match.challengerSquad.bench}
+                matchEvents={match.events}
+                team="home"
               />
               <PostMatchLineup
                 title={awayName}
@@ -778,6 +911,9 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
                 squadIds={match.challengedSquad.squad}
                 formation={match.challengedSquad.formation}
                 playerStats={fullPlayerStats}
+                bench={match.challengedSquad.bench}
+                matchEvents={match.events}
+                team="away"
               />
             </div>
 
