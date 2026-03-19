@@ -413,6 +413,7 @@ function PostMatchLineup({
   playerStats,
   bench,
   matchEvents,
+  team,
 }: {
   title: string
   titleColor: string
@@ -421,6 +422,7 @@ function PostMatchLineup({
   playerStats: Record<string, PlayerMatchStats>
   bench?: string[]
   matchEvents?: MatchEvent[]
+  team?: 'home' | 'away'
 }) {
   const formDef = FORMATIONS[formation]
 
@@ -445,7 +447,7 @@ function PostMatchLineup({
             : rating < 6 ? 'text-red-400'
             : 'text-[#8A9BBF]'
           const subOutEvent = matchEvents?.find(
-            e => e.type === 'substitution' && e.playerId === id
+            e => e.type === 'substitution' && e.playerId === id && (!team || e.team === team)
           )
 
           return (
@@ -519,7 +521,7 @@ function PostMatchLineup({
               if (!player) return null
 
               const subEvent = matchEvents?.find(
-                e => e.type === 'substitution' && e.subInPlayerId === id
+                e => e.type === 'substitution' && e.subInPlayerId === id && (!team || e.team === team)
               )
               const subMinute = subEvent?.minute
               const wasUsed = !!subEvent
@@ -576,9 +578,13 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
   const [cinematicEvent, setCinematicEvent] = useState<MatchEvent | null>(null)
   const [cinematicPhaseIndex, setCinematicPhaseIndex] = useState(0)
   const cinematicQueueRef = useRef<MatchEvent[]>([])
+  const queueTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const eventsEndRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const lastProcessedMinute = useRef(0)
+
+  // Cleanup queue timers on unmount
+  useEffect(() => () => clearTimeout(queueTimerRef.current), [])
 
   const tick = useCallback(() => {
     setCurrentMinute(prev => Math.min(prev + 1, 91))
@@ -610,7 +616,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
         else setScoreAway(s => s - 1)
       }
       // Process next in queue immediately (with a tiny delay for visual effect)
-      setTimeout(startNextFromQueue, 300)
+      queueTimerRef.current = setTimeout(startNextFromQueue, 300)
     }
   }, [])
 
@@ -624,7 +630,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
       setCinematicEvent(null)
       setCinematicPhaseIndex(0)
       // Small delay before processing next event
-      setTimeout(startNextFromQueue, 200)
+      queueTimerRef.current = setTimeout(startNextFromQueue, 200)
     }
   }, [cinematicEvent, cinematicPhaseIndex, startNextFromQueue])
 
@@ -897,6 +903,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
                 playerStats={fullPlayerStats}
                 bench={match.challengerSquad.bench}
                 matchEvents={match.events}
+                team="home"
               />
               <PostMatchLineup
                 title={awayName}
@@ -906,6 +913,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
                 playerStats={fullPlayerStats}
                 bench={match.challengedSquad.bench}
                 matchEvents={match.events}
+                team="away"
               />
             </div>
 

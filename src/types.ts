@@ -103,7 +103,7 @@ export interface SquadSnapshot {
   coachId: string
   coachLevel: number
   maxHabitStreak: number
-  bench: string[]           // 0-3 auto-picked player IDs
+  bench?: string[]          // 0-3 auto-picked player IDs (absent in old matches)
 }
 
 export type ChallengeStatus = 'pending' | 'accepted' | 'declined' | 'expired' | 'cancelled'
