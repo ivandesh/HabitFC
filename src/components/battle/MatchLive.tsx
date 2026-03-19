@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Match, MatchEvent, Footballer } from '../../types'
+import { buildPlayerStats, calcRating } from '../../lib/playerRating'
+import type { PlayerMatchStats } from '../../lib/playerRating'
 import { footballerMap } from '../../data/footballers'
 import { FORMATIONS } from '../../lib/formations'
 import {
@@ -32,54 +34,6 @@ function getPlayerName(id: string): string {
 function getLastName(name: string): string {
   const parts = name.split(' ')
   return parts[parts.length - 1]
-}
-
-// ─── Player stats tracking ──────────────────────────────────────────────────
-
-interface PlayerMatchStats {
-  goals: number
-  yellowCards: number
-  redCards: number
-  nearMisses: number
-  greatSaves: number
-  onFire: boolean
-}
-
-function buildPlayerStats(events: MatchEvent[]): Record<string, PlayerMatchStats> {
-  const stats: Record<string, PlayerMatchStats> = {}
-  const ensure = (id: string) => {
-    if (!id) return
-    if (!stats[id]) stats[id] = { goals: 0, yellowCards: 0, redCards: 0, nearMisses: 0, greatSaves: 0, onFire: false }
-  }
-  for (const ev of events) {
-    if (!ev.playerId) continue
-    ensure(ev.playerId)
-    const s = stats[ev.playerId]
-    if (!s) continue
-    switch (ev.type) {
-      case 'goal': s.goals++; break
-      case 'yellow_card': s.yellowCards++; break
-      case 'red_card': s.redCards++; break
-      case 'near_miss': s.nearMisses++; break
-      case 'great_save': s.greatSaves++; break
-      case 'on_fire': s.onFire = true; break
-    }
-  }
-  return stats
-}
-
-/** Simple rating 5.0-10.0 based on match contributions */
-function calcRating(playerId: string, stats: Record<string, PlayerMatchStats>): number {
-  const s = stats[playerId]
-  let rating = 6.5 // base
-  if (!s) return rating
-  rating += s.goals * 1.0
-  rating += s.greatSaves * 0.6
-  rating += s.nearMisses * 0.2
-  rating -= s.yellowCards * 0.3
-  rating -= s.redCards * 1.0
-  if (s.onFire) rating += 0.4
-  return Math.max(5.0, Math.min(10.0, Math.round(rating * 10) / 10))
 }
 
 // ─── Pitch ball position logic ──────────────────────────────────────────────
