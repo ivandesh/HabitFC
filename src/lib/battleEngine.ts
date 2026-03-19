@@ -1,8 +1,9 @@
-import type { SquadSnapshot, Footballer } from '../types'
-import { footballerMap } from '../data/footballers'
+import type { SquadSnapshot, Footballer, MatchEventPhase } from '../types'
+import { footballerMap, playerOverall } from '../data/footballers'
 import { coaches } from '../data/coaches'
 import { FORMATIONS } from './formations'
 import type { SeededRng } from './seededRng'
+import { buildPlayerStats, calcRating } from './playerRating'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -26,6 +27,47 @@ const FORMATION_CATEGORY: Record<string, 'attacking' | 'balanced' | 'defensive'>
   '4-2-3-1': 'balanced',
   '5-3-2': 'defensive',
 }
+
+// ─── Cinematic phase templates ──────────────────────────────────────────────
+
+const PENALTY_PHASES: MatchEventPhase[] = [
+  { phase: 'foul', duration: 0.8 },
+  { phase: 'whistle', duration: 0.5 },
+  { phase: 'player_walks_to_spot', duration: 1.5 },
+  { phase: 'keeper_ready', duration: 0.8 },
+  { phase: 'kick', duration: 0.5 },
+  { phase: 'outcome', duration: 1.0 },
+]
+
+const FREE_KICK_PHASES: MatchEventPhase[] = [
+  { phase: 'foul', duration: 0.8 },
+  { phase: 'wall_lines_up', duration: 1.2 },
+  { phase: 'run_up', duration: 1.0 },
+  { phase: 'kick', duration: 0.5 },
+  { phase: 'outcome', duration: 1.0 },
+]
+
+const CORNER_PHASES: MatchEventPhase[] = [
+  { phase: 'ball_out', duration: 0.5 },
+  { phase: 'corner_setup', duration: 1.0 },
+  { phase: 'cross', duration: 0.8 },
+  { phase: 'header', duration: 0.5 },
+  { phase: 'outcome', duration: 1.0 },
+]
+
+const COUNTERATTACK_PHASES: MatchEventPhase[] = [
+  { phase: 'interception', duration: 0.5 },
+  { phase: 'pass_1', duration: 0.8 },
+  { phase: 'pass_2', duration: 0.8 },
+  { phase: 'shot', duration: 0.5 },
+  { phase: 'outcome', duration: 1.0 },
+]
+
+const VAR_REVIEW_PHASES: MatchEventPhase[] = [
+  { phase: 'celebration_pause', duration: 1.5 },
+  { phase: 'var_check', duration: 2.0 },
+  { phase: 'decision', duration: 1.5 },
+]
 
 // attacking > defensive > balanced > attacking
 function formationMatchupBonus(mine: string, theirs: string): number {
@@ -212,6 +254,71 @@ const MOMENTUM_DESCRIPTIONS = [
   'тисне на ворота суперника!', 'перехоплює ініціативу!',
 ]
 
+const PENALTY_DESCRIPTIONS = [
+  'Фол у штрафному!', 'Пенальті! Контакт у штрафному!',
+  'Суддя показує на точку!', 'Пенальті після перегляду!',
+]
+
+const FREE_KICK_DESCRIPTIONS = [
+  'Небезпечний штрафний!', 'Штрафний з гарної позиції!',
+  'Штрафний біля штрафного!', 'Фол на підступах!',
+]
+
+const CORNER_DESCRIPTIONS = [
+  'Кутовий удар!', 'Подача з кутового!',
+  'Небезпечний кутовий!', "Кутовий, м'яч летить у штрафну!",
+]
+
+const COUNTERATTACK_DESCRIPTIONS = [
+  'Контратака!', 'Швидкий вихід!',
+  'Перехоплення та контратака!', 'Небезпечний вихід 3 на 2!',
+]
+
+const VAR_CONFIRMED_DESCRIPTIONS = [
+  'VAR підтверджує — ГОЛ!', 'Після перегляду — гол зараховано!',
+]
+
+const VAR_DISALLOWED_DESCRIPTIONS = [
+  'VAR скасовує гол! Офсайд!', 'Гол не зараховано після перегляду!',
+  'VAR: фол в атаці, гол скасовано!',
+]
+
+// ─── Auto-bench picker ──────────────────────────────────────────────────────
+
+/** Auto-pick up to 3 bench players from collection, excluding starting 11 and GKs */
+export function pickAutoBench(
+  collection: string[],
+  startingSquad: string[],
+): string[] {
+  const startingSet = new Set(startingSquad)
+  const available = collection
+    .filter(id => !startingSet.has(id))
+    .map(id => footballerMap.get(id))
+    .filter((p): p is Footballer => !!p && p.position !== 'GK')
+    .sort((a, b) => playerOverall(b) - playerOverall(a))
+
+  const bench: string[] = []
+  const positions: Array<'DEF' | 'MID' | 'FWD'> = ['DEF', 'MID', 'FWD']
+
+  // One per position category
+  for (const pos of positions) {
+    const pick = available.find(p => p.position === pos && !bench.includes(p.id))
+    if (pick) bench.push(pick.id)
+  }
+
+  // If we couldn't fill all 3, fill from remaining best
+  if (bench.length < 3) {
+    for (const p of available) {
+      if (bench.length >= 3) break
+      if (!bench.includes(p.id)) bench.push(p.id)
+    }
+  }
+
+  return bench.slice(0, 3)
+}
+
+// ─── Simulation ─────────────────────────────────────────────────────────────
+
 export interface SimulationResult {
   events: import('../types').MatchEvent[]
   scoreHome: number
@@ -276,9 +383,64 @@ export function simulateMatch(
   const yellowCards: Record<string, number> = {}
   const sentOff = new Set<string>()
 
+  // Bench tracking for substitutions
+  let homeBench = [...(homeSnap.bench ?? [])]
+  let awayBench = [...(awaySnap.bench ?? [])]
+
   /** Get eligible (not sent off) players from a team */
   function eligible(teamPlayers: (Footballer | undefined)[]): Footballer[] {
     return teamPlayers.filter((p): p is Footballer => !!p && !sentOff.has(p.id))
+  }
+
+  /** Push a VAR review after a goal (10% chance). If disallowed, decrements score. */
+  function maybeVarReview(
+    minute: number,
+    team: 'home' | 'away',
+    scorerPlayerId: string,
+  ) {
+    if (rng.chance(0.10)) {
+      const confirmed = rng.chance(0.7)
+      events.push({
+        minute, type: 'var_review', team,
+        playerId: scorerPlayerId,
+        description: confirmed ? rng.pick(VAR_CONFIRMED_DESCRIPTIONS) : rng.pick(VAR_DISALLOWED_DESCRIPTIONS),
+        phases: VAR_REVIEW_PHASES,
+        varOutcome: confirmed ? 'confirmed' : 'disallowed',
+      })
+      if (!confirmed) {
+        if (team === 'home') scoreHome--; else scoreAway--
+      }
+    }
+  }
+
+  /** Process a red card substitution from bench */
+  function redCardSub(
+    minute: number,
+    team: 'home' | 'away',
+    sentOffPlayer: Footballer,
+  ) {
+    const bench = team === 'home' ? homeBench : awayBench
+    if (bench.length === 0) return
+
+    let subIdx = bench.findIndex(bid => {
+      const bp = footballerMap.get(bid)
+      return bp && bp.position === sentOffPlayer.position
+    })
+    if (subIdx < 0) subIdx = 0
+    const subInId = bench.splice(subIdx, 1)[0]
+    if (!subInId) return
+
+    const subInPlayer = footballerMap.get(subInId)
+    events.push({
+      minute: minute + 1, type: 'substitution', team,
+      playerId: sentOffPlayer.id,
+      subInPlayerId: subInId,
+      description: `\u2193 ${sentOffPlayer.name} \uD83D\uDFE5 \u2191 ${subInPlayer?.name ?? '\u0413\u0440\u0430\u0432\u0435\u0446\u044C'}`,
+    })
+    // Replace in team roster for future events
+    const teamPlayers = team === 'home' ? homePlayers : awayPlayers
+    const emptyIdx = teamPlayers.findIndex(p => p?.id === sentOffPlayer.id)
+    if (emptyIdx >= 0) teamPlayers[emptyIdx] = subInPlayer ?? undefined
   }
 
   let goalIdx = 0
@@ -295,18 +457,125 @@ export function simulateMatch(
       const onField = eligible(teamPlayers)
       const scorerCandidates = onField.filter(p => p.position === 'FWD' || p.position === 'MID')
       const scorer = rng.pick(scorerCandidates.length > 0 ? scorerCandidates : onField)
+      const scorerId = scorer?.id ?? ''
 
       if (isHomeGoal) scoreHome++; else scoreAway++
 
-      events.push({
-        minute,
-        type: 'goal',
-        team,
-        playerId: scorer?.id ?? '',
-        description: rng.pick(GOAL_DESCRIPTIONS),
-      })
+      // Roll cinematic type
+      const cinematicRoll = rng.next()
+      if (cinematicRoll < 0.50) {
+        // Regular goal
+        events.push({
+          minute, type: 'goal', team,
+          playerId: scorerId,
+          description: rng.pick(GOAL_DESCRIPTIONS),
+        })
+      } else if (cinematicRoll < 0.65) {
+        // Penalty lead-in -> goal
+        events.push({
+          minute, type: 'penalty', team,
+          playerId: scorerId,
+          description: rng.pick(PENALTY_DESCRIPTIONS),
+          phases: PENALTY_PHASES,
+        })
+        events.push({
+          minute, type: 'goal', team,
+          playerId: scorerId,
+          description: '\u0413\u041E\u041B! \u041F\u0435\u043D\u0430\u043B\u044C\u0442\u0456 \u0440\u0435\u0430\u043B\u0456\u0437\u043E\u0432\u0430\u043D\u043E!',
+        })
+      } else if (cinematicRoll < 0.85) {
+        // Free kick lead-in -> goal
+        events.push({
+          minute, type: 'free_kick', team,
+          playerId: scorerId,
+          description: rng.pick(FREE_KICK_DESCRIPTIONS),
+          phases: FREE_KICK_PHASES,
+        })
+        events.push({
+          minute, type: 'goal', team,
+          playerId: scorerId,
+          description: '\u0413\u041E\u041B! \u0417\u0456 \u0448\u0442\u0440\u0430\u0444\u043D\u043E\u0433\u043E!',
+        })
+      } else {
+        // Counterattack lead-in -> goal
+        events.push({
+          minute, type: 'counterattack', team,
+          playerId: scorerId,
+          description: rng.pick(COUNTERATTACK_DESCRIPTIONS),
+          phases: COUNTERATTACK_PHASES,
+        })
+        events.push({
+          minute, type: 'goal', team,
+          playerId: scorerId,
+          description: '\u0413\u041E\u041B! \u0411\u043B\u0438\u0441\u043A\u0430\u0432\u0438\u0447\u043D\u0430 \u043A\u043E\u043D\u0442\u0440\u0430\u0442\u0430\u043A\u0430!',
+        })
+      }
+
+      // VAR review chance after every goal
+      maybeVarReview(minute, team, scorerId)
+
       goalIdx++
       continue
+    }
+
+    // ── Halftime substitutions (after minute 45) ──
+    if (minute === 45) {
+      for (const side of ['home', 'away'] as const) {
+        const teamPlayers = side === 'home' ? homePlayers : awayPlayers
+        const formRolls = side === 'home' ? homeStrength.formRolls : awayStrength.formRolls
+        const benchIds = side === 'home' ? homeBench : awayBench
+
+        if (benchIds.length === 0) continue
+
+        // Build first-half stats
+        const firstHalfEvents = events.filter(e => e.minute <= 45)
+        const stats = buildPlayerStats(firstHalfEvents)
+
+        // Rate all outfield players
+        const outfieldIndices: number[] = []
+        for (let i = 0; i < 11; i++) {
+          const p = teamPlayers[i]
+          if (!p || p.position === 'GK' || sentOff.has(p.id)) continue
+          outfieldIndices.push(i)
+        }
+
+        // Sort by rating (lowest first)
+        outfieldIndices.sort((a, b) => {
+          const ratingA = calcRating(teamPlayers[a]!.id, stats, formRolls[a])
+          const ratingB = calcRating(teamPlayers[b]!.id, stats, formRolls[b])
+          return ratingA - ratingB
+        })
+
+        // Sub out 2 lowest-rated (or fewer if bench is smaller)
+        const subsToMake = Math.min(2, benchIds.length)
+        for (let s = 0; s < subsToMake && s < outfieldIndices.length; s++) {
+          const outIdx = outfieldIndices[s]
+          const outPlayer = teamPlayers[outIdx]!
+
+          // Find bench player matching position, or best available
+          let subInIdx = benchIds.findIndex(bid => {
+            const bp = footballerMap.get(bid)
+            return bp && bp.position === outPlayer.position
+          })
+          if (subInIdx < 0) subInIdx = 0
+
+          const subInId = benchIds.splice(subInIdx, 1)[0]
+          if (!subInId) continue
+
+          const subInPlayer = footballerMap.get(subInId)
+
+          events.push({
+            minute: 46, type: 'substitution', team: side,
+            playerId: outPlayer.id,
+            subInPlayerId: subInId,
+            description: `\u2193 ${outPlayer.name} \u2191 ${subInPlayer?.name ?? '\u0413\u0440\u0430\u0432\u0435\u0446\u044C'}`,
+          })
+
+          // Update internal tracking
+          sentOff.add(outPlayer.id) // treat as "off the field"
+          teamPlayers[outIdx] = subInPlayer ?? undefined
+        }
+      }
     }
 
     // ── Flavor events ──
@@ -321,7 +590,63 @@ export function simulateMatch(
 
       const anyPlayer = rng.pick(onField)
 
-      if (roll < 0.15) {
+      if (roll < 0.10) {
+        // Corner kick
+        const canScore = rng.chance(0.15)
+        // Find next unconsumed goal in the budget
+        const nextGoalIdx = goalMinutes.findIndex((gm, gi) => gi >= goalIdx && gm > minute)
+
+        if (canScore && nextGoalIdx >= 0) {
+          // Corner scores — replace nearest future budgeted goal
+          goalMinutes.splice(nextGoalIdx, 1)
+          const headerCandidates = onField.filter(p => p.position === 'DEF' || p.position === 'FWD')
+          const scorer = rng.pick(headerCandidates.length > 0 ? headerCandidates : onField)
+          const scorerId = scorer?.id ?? ''
+          events.push({
+            minute, type: 'corner', team,
+            playerId: scorerId,
+            description: rng.pick(CORNER_DESCRIPTIONS),
+            phases: CORNER_PHASES,
+          })
+          events.push({
+            minute, type: 'goal', team,
+            playerId: scorerId,
+            description: '\u0413\u043E\u043B \u0433\u043E\u043B\u043E\u0432\u043E\u044E \u0437 \u043A\u0443\u0442\u043E\u0432\u043E\u0433\u043E!',
+          })
+          if (team === 'home') scoreHome++; else scoreAway++
+
+          // VAR review chance after corner goal
+          maybeVarReview(minute, team, scorerId)
+        } else {
+          // Corner doesn't score
+          const outcomeRoll = rng.next()
+          const oppositeTeam = team === 'home' ? 'away' as const : 'home' as const
+          const oppPlayers = oppositeTeam === 'home' ? homePlayers : awayPlayers
+          const oppOnField = eligible(oppPlayers)
+
+          events.push({
+            minute, type: 'corner', team,
+            playerId: anyPlayer?.id ?? '',
+            description: rng.pick(CORNER_DESCRIPTIONS),
+            phases: CORNER_PHASES,
+          })
+          if (outcomeRoll < 0.5) {
+            const keepers = oppOnField.filter(p => p.position === 'GK')
+            const keeper = keepers.length > 0 ? rng.pick(keepers) : (oppOnField.length > 0 ? rng.pick(oppOnField) : anyPlayer)
+            events.push({
+              minute, type: 'great_save', team: oppositeTeam,
+              playerId: keeper?.id ?? '',
+              description: rng.pick(GREAT_SAVE_DESCRIPTIONS),
+            })
+          } else {
+            events.push({
+              minute, type: 'near_miss', team,
+              playerId: anyPlayer?.id ?? '',
+              description: rng.pick(NEAR_MISS_DESCRIPTIONS),
+            })
+          }
+        }
+      } else if (roll < 0.25) {
         // Yellow card
         const defOrMid = onField.filter(p => p.position === 'DEF' || p.position === 'MID')
         const carded = rng.pick(defOrMid.length > 0 ? defOrMid : onField)
@@ -337,8 +662,10 @@ export function simulateMatch(
           events.push({
             minute, type: 'red_card', team,
             playerId: cardedId,
-            description: 'Друга жовта — вилучення!',
+            description: '\u0414\u0440\u0443\u0433\u0430 \u0436\u043E\u0432\u0442\u0430 \u2014 \u0432\u0438\u043B\u0443\u0447\u0435\u043D\u043D\u044F!',
           })
+          // Red card substitution
+          redCardSub(minute, team, carded)
         } else {
           if (team === 'home') homeGoalDebuff += 0.03; else awayGoalDebuff += 0.03
           events.push({
@@ -347,7 +674,7 @@ export function simulateMatch(
             description: rng.pick(YELLOW_CARD_DESCRIPTIONS),
           })
         }
-      } else if (roll < 0.18) {
+      } else if (roll < 0.28) {
         // Straight red card (rare)
         const carded = rng.pick(onField)
         if (!carded) continue
@@ -359,14 +686,16 @@ export function simulateMatch(
           playerId: carded.id,
           description: rng.pick(RED_CARD_DESCRIPTIONS),
         })
-      } else if (roll < 0.45) {
+        // Red card substitution
+        redCardSub(minute, team, carded)
+      } else if (roll < 0.50) {
         // Near miss
         events.push({
           minute, type: 'near_miss', team,
           playerId: anyPlayer.id,
           description: rng.pick(NEAR_MISS_DESCRIPTIONS),
         })
-      } else if (roll < 0.65) {
+      } else if (roll < 0.68) {
         // Great save
         const oppositeTeam = team === 'home' ? 'away' as const : 'home' as const
         const oppPlayers = oppositeTeam === 'home' ? homePlayers : awayPlayers
@@ -378,7 +707,7 @@ export function simulateMatch(
           playerId: keeper?.id ?? '',
           description: rng.pick(GREAT_SAVE_DESCRIPTIONS),
         })
-      } else if (roll < 0.80) {
+      } else if (roll < 0.82) {
         // On fire
         const formRolls = team === 'home' ? homeStrength.formRolls : awayStrength.formRolls
         const hotIdx = formRolls.findIndex((r, i) => r >= 8 && teamPlayers[i] && !sentOff.has(teamPlayers[i]!.id))
@@ -387,7 +716,7 @@ export function simulateMatch(
           events.push({
             minute, type: 'on_fire', team,
             playerId: hotPlayer?.id ?? '',
-            description: `${hotPlayer?.name ?? 'Гравець'} у відмінній формі!`,
+            description: `${hotPlayer?.name ?? '\u0413\u0440\u0430\u0432\u0435\u0446\u044C'} \u0443 \u0432\u0456\u0434\u043C\u0456\u043D\u043D\u0456\u0439 \u0444\u043E\u0440\u043C\u0456!`,
           })
         } else {
           events.push({
