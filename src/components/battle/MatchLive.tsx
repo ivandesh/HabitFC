@@ -577,6 +577,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
   const [isHalfTime, setIsHalfTime] = useState(false)
   const [cinematicEvent, setCinematicEvent] = useState<MatchEvent | null>(null)
   const [cinematicPhaseIndex, setCinematicPhaseIndex] = useState(0)
+  const [queueDraining, setQueueDraining] = useState(false)
   const cinematicQueueRef = useRef<MatchEvent[]>([])
   const queueTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
   const eventsEndRef = useRef<HTMLDivElement>(null)
@@ -594,6 +595,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
     const queue = cinematicQueueRef.current
     if (queue.length === 0) {
       setCinematicEvent(null)
+      setQueueDraining(false)
       return
     }
     const next = queue.shift()!
@@ -660,6 +662,7 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
       // Queue ALL events for this minute — cinematics play as overlay,
       // others process after their preceding cinematic finishes
       cinematicQueueRef.current = [...cinematicQueueRef.current, ...minuteEvents]
+      setQueueDraining(true)
       if (!cinematicEvent) {
         startNextFromQueue()
       }
@@ -687,13 +690,12 @@ export function MatchLive({ match, homeName, awayName, viewerTeam, onFinish }: P
 
   useEffect(() => {
     if (isFinished || isHalfTime || currentMinute > 90) return
-    if (cinematicEvent) return  // freeze timer during cinematic
-    if (cinematicQueueRef.current.length > 0) return  // also freeze while queue is draining
+    if (cinematicEvent || queueDraining) return  // freeze timer during cinematic or queue drain
     const hasEvent = match.events.some(e => e.minute === currentMinute + 1)
     const delay = hasEvent ? 800 : 250
     timerRef.current = setTimeout(tick, delay)
     return () => clearTimeout(timerRef.current)
-  }, [currentMinute, isFinished, isHalfTime, tick, match.events, cinematicEvent])
+  }, [currentMinute, isFinished, isHalfTime, tick, match.events, cinematicEvent, queueDraining])
 
   useEffect(() => {
     eventsEndRef.current?.scrollIntoView({ behavior: 'smooth' })
