@@ -3,7 +3,7 @@ import { footballerMap, playerOverall } from '../data/footballers'
 import { coaches } from '../data/coaches'
 import { FORMATIONS } from './formations'
 import type { SeededRng } from './seededRng'
-import { buildPlayerStats, calcRating } from './playerRating'
+import { buildPlayerStats, calcRating, playerStatsKey } from './playerRating'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -541,8 +541,8 @@ export function simulateMatch(
 
         // Sort by rating (lowest first)
         outfieldIndices.sort((a, b) => {
-          const ratingA = calcRating(teamPlayers[a]!.id, stats, formRolls[a])
-          const ratingB = calcRating(teamPlayers[b]!.id, stats, formRolls[b])
+          const ratingA = calcRating(playerStatsKey(side, teamPlayers[a]!.id), stats, formRolls[a])
+          const ratingB = calcRating(playerStatsKey(side, teamPlayers[b]!.id), stats, formRolls[b])
           return ratingA - ratingB
         })
 

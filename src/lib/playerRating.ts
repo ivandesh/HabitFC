@@ -9,16 +9,18 @@ export interface PlayerMatchStats {
   onFire: boolean
 }
 
+/** Build per-player match stats keyed by `team:playerId` to handle both teams having the same player. */
 export function buildPlayerStats(events: MatchEvent[]): Record<string, PlayerMatchStats> {
   const stats: Record<string, PlayerMatchStats> = {}
-  const ensure = (id: string) => {
-    if (!id) return
-    if (!stats[id]) stats[id] = { goals: 0, yellowCards: 0, redCards: 0, nearMisses: 0, greatSaves: 0, onFire: false }
+  const ensure = (key: string) => {
+    if (!key) return
+    if (!stats[key]) stats[key] = { goals: 0, yellowCards: 0, redCards: 0, nearMisses: 0, greatSaves: 0, onFire: false }
   }
   for (const ev of events) {
     if (!ev.playerId) continue
-    ensure(ev.playerId)
-    const s = stats[ev.playerId]
+    const key = `${ev.team}:${ev.playerId}`
+    ensure(key)
+    const s = stats[key]
     if (!s) continue
     switch (ev.type) {
       case 'goal': s.goals++; break
@@ -30,6 +32,11 @@ export function buildPlayerStats(events: MatchEvent[]): Record<string, PlayerMat
     }
   }
   return stats
+}
+
+/** Helper to look up stats for a player on a specific team. */
+export function playerStatsKey(team: 'home' | 'away', playerId: string): string {
+  return `${team}:${playerId}`
 }
 
 /** Rating 5.0-10.0 based on match contributions. formRoll (optional) breaks ties for players with no events. */

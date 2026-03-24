@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import type { Match, MatchEvent, Footballer } from '../../types'
-import { buildPlayerStats, calcRating } from '../../lib/playerRating'
+import { buildPlayerStats, calcRating, playerStatsKey } from '../../lib/playerRating'
 import type { PlayerMatchStats } from '../../lib/playerRating'
 import { footballerMap } from '../../data/footballers'
 import { FORMATIONS } from '../../lib/formations'
@@ -302,10 +302,10 @@ function MatchPitch({
 
       {/* Team players */}
       {homePlayers.map(p => (
-        <PitchPlayerDot key={p.id} player={p} stats={playerStats[p.id]} showBadges={showBadges} />
+        <PitchPlayerDot key={p.id} player={p} stats={playerStats[playerStatsKey('home', p.id)]} showBadges={showBadges} />
       ))}
       {awayPlayers.map(p => (
-        <PitchPlayerDot key={p.id} player={p} stats={playerStats[p.id]} showBadges={showBadges} />
+        <PitchPlayerDot key={p.id} player={p} stats={playerStats[playerStatsKey('away', p.id)]} showBadges={showBadges} />
       ))}
 
       {/* Goal flash */}
@@ -440,8 +440,9 @@ function PostMatchLineup({
         {squadIds.slice(0, 11).map((id, i) => {
           const player = getPlayer(id)
           if (!player) return null
-          const stats = playerStats[id]
-          const rating = calcRating(id, playerStats)
+          const statsKey = team ? playerStatsKey(team, id) : id
+          const stats = playerStats[statsKey]
+          const rating = calcRating(statsKey, playerStats)
           const ratingColor = rating >= 8 ? 'text-[#00E676]'
             : rating >= 7 ? 'text-yellow-400'
             : rating < 6 ? 'text-red-400'
