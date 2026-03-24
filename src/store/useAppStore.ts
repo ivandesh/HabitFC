@@ -226,13 +226,15 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       },
 
       setSquadSlot: (teamId, slotIndex, footballerId) => {
-        set(state => ({
-          teams: updateTeamInArray(state.teams, teamId, {
-            squad: state.teams.find(t => t.id === teamId)!.squad.map(
-              (id, i) => i === slotIndex ? footballerId : id
-            ),
-          }),
-        }))
+        set(state => {
+          const team = state.teams.find(t => t.id === teamId)
+          if (!team) return state
+          return {
+            teams: updateTeamInArray(state.teams, teamId, {
+              squad: team.squad.map((id, i) => i === slotIndex ? footballerId : id),
+            }),
+          }
+        })
         const newUnlocks = checkAchievements(get())
         for (const achievementId of newUnlocks) {
           get().unlockAchievement(achievementId)
@@ -320,7 +322,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           lastTriviaDate: data.lastTriviaDate ?? null,
           triviaHistory: data.triviaHistory ?? [],
           _stateLoaded: true,
-        } as unknown as AppStore, true)
+        })
       },
 
       unlockAchievement: (id) => {
