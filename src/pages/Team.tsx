@@ -4,7 +4,7 @@ import { footballers, footballerMap, playerOverall } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
-import type { AppState, Position, Footballer } from '../types'
+import type { Position, Footballer } from '../types'
 import { coaches as allCoaches } from '../data/coaches'
 import { computeCoachChemistryPct, getCoachLevel, applyCoachStatBoost } from '../lib/coachPerks'
 import { CoachCard } from '../components/cards/CoachCard'
@@ -87,30 +87,51 @@ function computeChemistryDelta(
   slotIndex: number,
   candidateId: string
 ): number {
-  const currentPct = totalBonusPercent(
-    computeActiveBonuses({ squad: currentSquad } as AppState)
-  )
+  const currentPct = totalBonusPercent(computeActiveBonuses(currentSquad))
   const newSquad = [...currentSquad]
   newSquad[slotIndex] = candidateId
-  const newPct = totalBonusPercent(
-    computeActiveBonuses({ squad: newSquad } as AppState)
-  )
+  const newPct = totalBonusPercent(computeActiveBonuses(newSquad))
   return newPct - currentPct
 }
 
 type PanelMode = 'idle' | 'pick' | 'stats'
 
 export function Team() {
-  const squad = useAppStore(state => state.squad ?? Array(11).fill(null))
-  const formation = useAppStore(state => state.formation ?? '4-3-3')
+  const teams = useAppStore(state => state.teams)
+  const activeTeamId = useAppStore(state => state.activeTeamId)
   const setSquadSlot = useAppStore(state => state.setSquadSlot)
   const setFormation = useAppStore(state => state.setFormation)
+  const assignCoachAction = useAppStore(state => state.assignCoach)
   const collection = useAppStore(state => state.collection)
-  const squadForBonuses = useAppStore(state => state.squad)
-
   const coachCollection = useAppStore(state => state.coachCollection)
-  const assignedCoach = useAppStore(state => state.assignedCoach)
-  const assignCoach = useAppStore(state => state.assignCoach)
+  const createTeamAction = useAppStore(state => state.createTeam)
+  const renameTeam = useAppStore(state => state.renameTeam)
+  const deleteTeam = useAppStore(state => state.deleteTeam)
+  const setActiveTeam = useAppStore(state => state.setActiveTeam)
+
+  // Currently viewed team (local state, defaults to active)
+  const [viewedTeamId, setViewedTeamId] = useState(activeTeamId)
+  // Keep viewed team synced if teams change (e.g., deletion)
+  useEffect(() => {
+    if (!teams.find(t => t.id === viewedTeamId)) {
+      setViewedTeamId(activeTeamId)
+    }
+  }, [teams, viewedTeamId, activeTeamId])
+
+  const viewedTeam = teams.find(t => t.id === viewedTeamId) ?? teams[0]
+  const isActiveTeam = viewedTeamId === activeTeamId
+
+  const squad = viewedTeam.squad
+  const formation = viewedTeam.formation
+  const assignedCoach = viewedTeam.assignedCoach
+
+  // Team name editing state
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState('')
+  // Creating new team state
+  const [creatingTeam, setCreatingTeam] = useState(false)
+  const [newTeamName, setNewTeamName] = useState('')
+
   const [coachPickerOpen, setCoachPickerOpen] = useState(false)
 
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
@@ -137,7 +158,7 @@ export function Team() {
     return Math.round(filledPlayers.reduce((s, f) => s + playerOverall(f), 0) / filledPlayers.length)
   }, [filledPlayers])
 
-  const activeBonuses = useMemo(() => computeActiveBonuses({ squad: squadForBonuses } as AppState), [squadForBonuses])
+  const activeBonuses = useMemo(() => computeActiveBonuses(viewedTeam.squad), [viewedTeam.squad])
   const bonusPct = totalBonusPercent(activeBonuses)
 
   const assignedCoachObj = useMemo(
@@ -153,7 +174,7 @@ export function Team() {
   const coachLevel = assignedCoach ? getCoachLevel(assignedCoach, coachCollection) : 0
 
   function boostedFootballer(f: Footballer) {
-    return applyCoachStatBoost(f, { assignedCoach, coachCollection } as AppState)
+    return applyCoachStatBoost(f, viewedTeam.assignedCoach, coachCollection)
   }
 
   const chemLinks = useMemo(() => getChemistryLinks(squad, SLOTS), [squad, SLOTS])
@@ -197,14 +218,14 @@ export function Team() {
 
   function handleSelectPlayer(footballerId: string) {
     if (activeSlot === null) return
-    setSquadSlot(activeSlot, footballerId)
+    setSquadSlot(viewedTeam.id, activeSlot, footballerId)
     setActiveSlot(null)
     setPanelMode('idle')
   }
 
   function handleRemoveFromStats() {
     if (activeSlot === null) return
-    setSquadSlot(activeSlot, null)
+    setSquadSlot(viewedTeam.id, activeSlot, null)
     setActiveSlot(null)
     setPanelMode('idle')
   }
@@ -213,7 +234,7 @@ export function Team() {
     if (newFormation === formation) return
     const hasPlayers = squad.some(Boolean)
     if (hasPlayers && !window.confirm('Зміна схеми скине склад. Продовжити?')) return
-    setFormation(newFormation)
+    setFormation(viewedTeam.id, newFormation)
     setActiveSlot(null)
     setPanelMode('idle')
   }
@@ -236,12 +257,142 @@ export function Team() {
             · {FORMATIONS[formation]?.label ?? formation} ·
           </div>
           <h1 className="font-oswald text-2xl sm:text-5xl font-bold uppercase tracking-wide text-white leading-none">
-            Склад
+            {viewedTeam.name}
           </h1>
           <p className="text-[#5A7090] mt-2 text-sm">{filledPlayers.length} / 11 гравців</p>
         </div>
         <CoinDisplay />
       </div>
+
+      {/* Team tabs */}
+      <div className="flex gap-1.5 mb-4 flex-wrap items-center">
+        {teams.map(team => {
+          const isViewed = team.id === viewedTeamId
+          const isActive = team.id === activeTeamId
+          return (
+            <button
+              key={team.id}
+              onClick={() => setViewedTeamId(team.id)}
+              className={`px-3 py-1.5 rounded-lg font-oswald font-bold text-xs uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                isViewed
+                  ? 'bg-[#00E676] text-[#04060A]'
+                  : 'bg-[#1A2336] text-[#5A7090] border border-[#2A3A50] hover:text-white'
+              }`}
+            >
+              {isActive && <span className="text-[10px]">⭐</span>}
+              {team.name}
+            </button>
+          )
+        })}
+        {teams.length < 5 && (
+          <button
+            onClick={() => { setCreatingTeam(true); setNewTeamName('') }}
+            className="px-3 py-1.5 rounded-lg font-oswald font-bold text-xs text-[#00E676] border border-dashed border-[#00E676]/50 hover:border-[#00E676] transition-all cursor-pointer"
+          >
+            +
+          </button>
+        )}
+      </div>
+
+      {/* Active team indicator + rename/delete controls */}
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2">
+          {isActiveTeam ? (
+            <span className="text-[10px] text-[#00E676] font-oswald uppercase tracking-widest">
+              Активна команда <span className="text-[#5A7090]">• бонуси та бої</span>
+            </span>
+          ) : (
+            <button
+              onClick={() => setActiveTeam(viewedTeam.id)}
+              className="text-[10px] text-[#FBBF24] font-oswald uppercase tracking-widest hover:text-[#FBBF24]/80 cursor-pointer underline"
+            >
+              Зробити активною ⭐
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {editingName ? (
+            <form
+              onSubmit={e => {
+                e.preventDefault()
+                if (nameInput.trim()) renameTeam(viewedTeam.id, nameInput)
+                setEditingName(false)
+              }}
+              className="flex items-center gap-1"
+            >
+              <input
+                autoFocus
+                value={nameInput}
+                onChange={e => setNameInput(e.target.value)}
+                maxLength={30}
+                className="bg-[#1A2336] text-white text-xs px-2 py-1 rounded border border-[#2A3A50] w-32 font-oswald"
+              />
+              <button type="submit" className="text-[#00E676] text-xs cursor-pointer">✓</button>
+              <button type="button" onClick={() => setEditingName(false)} className="text-[#5A7090] text-xs cursor-pointer">✕</button>
+            </form>
+          ) : (
+            <button
+              onClick={() => { setEditingName(true); setNameInput(viewedTeam.name) }}
+              className="text-[10px] text-[#5A7090] hover:text-white cursor-pointer"
+            >
+              ✏️ Назва
+            </button>
+          )}
+          {!isActiveTeam && teams.length > 1 && (
+            <button
+              onClick={() => {
+                if (window.confirm(`Видалити команду "${viewedTeam.name}"?`)) {
+                  deleteTeam(viewedTeam.id)
+                }
+              }}
+              className="text-[10px] text-red-400/60 hover:text-red-400 cursor-pointer"
+            >
+              🗑️
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* New team creation inline */}
+      {creatingTeam && (
+        <div className="mb-4 bg-[#0A0F1A] border border-[#00E676]/30 rounded-xl p-3">
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              if (newTeamName.trim()) {
+                createTeamAction(newTeamName)
+                setCreatingTeam(false)
+                const newTeams = useAppStore.getState().teams
+                const newest = newTeams[newTeams.length - 1]
+                if (newest) setViewedTeamId(newest.id)
+              }
+            }}
+            className="flex items-center gap-2"
+          >
+            <input
+              autoFocus
+              value={newTeamName}
+              onChange={e => setNewTeamName(e.target.value)}
+              placeholder="Назва нової команди"
+              maxLength={30}
+              className="flex-1 bg-[#1A2336] text-white text-sm px-3 py-2 rounded-lg border border-[#2A3A50] font-oswald"
+            />
+            <button
+              type="submit"
+              className="px-4 py-2 bg-[#00E676] text-[#04060A] font-oswald font-bold text-xs uppercase rounded-lg cursor-pointer"
+            >
+              Створити
+            </button>
+            <button
+              type="button"
+              onClick={() => setCreatingTeam(false)}
+              className="px-3 py-2 text-[#5A7090] font-oswald text-xs cursor-pointer"
+            >
+              ✕
+            </button>
+          </form>
+        </div>
+      )}
 
       {/* Formation switcher */}
       <div className="flex gap-1 mb-4 bg-[#0A0F1A] border border-[#1A2336] rounded-xl p-1 overflow-x-auto hide-scrollbar">
@@ -677,7 +828,7 @@ export function Team() {
 
               {assignedCoach && (
                 <button
-                  onClick={() => { assignCoach(null); setCoachPickerOpen(false) }}
+                  onClick={() => { assignCoachAction(viewedTeam.id, null); setCoachPickerOpen(false) }}
                   className="w-full mb-3 py-2 border border-red-500/30 text-red-400 text-xs font-oswald font-bold uppercase tracking-wider hover:bg-red-500/10 rounded-xl transition-colors cursor-pointer"
                 >
                   Зняти тренера
@@ -703,7 +854,7 @@ export function Team() {
                       return (
                         <button
                           key={c.id}
-                          onClick={() => { assignCoach(c.id); setCoachPickerOpen(false) }}
+                          onClick={() => { assignCoachAction(viewedTeam.id, c.id); setCoachPickerOpen(false) }}
                           className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
                         >
                           <CoachCard coach={c} level={lvl} mini={false} showPerk />
