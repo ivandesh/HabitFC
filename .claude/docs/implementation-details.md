@@ -78,6 +78,7 @@ src/
 │   ├── bonuses.ts              # Squad chemistry bonuses
 │   ├── coachPerks.ts           # Coach perk calculations
 │   ├── achievements.ts         # Achievement definitions + checker
+│   ├── teamHelpers.ts           # getActiveTeam, createDefaultTeam, migrateOldState, updateTeamInArray
 │   ├── formations.ts           # Formation slot layouts
 │   ├── rarityConfig.ts         # Rarity colors/styles
 │   ├── sounds.ts               # Web Audio API synthesized SFX
@@ -132,25 +133,36 @@ BrowserRouter (basename="/HabitFC/")
 ### Zustand Store Shape
 
 ```typescript
+interface Team {
+  id: string;                       // crypto.randomUUID()
+  name: string;                     // user-defined, 1-30 chars
+  squad: (string | null)[];         // 11 slots, footballer IDs
+  formation: string;                // e.g. "4-3-3"
+  assignedCoach: string | null;     // coach ID
+}
+
 interface AppState {
   coins: number;
   habits: Habit[];
-  collection: string[];           // array of footballer IDs owned
-  pullHistory: string[];           // history of pulled card IDs
-  squad: Record<string, string>;   // slot label → footballer ID
-  formation: string;               // e.g. "4-3-3"
-  achievements: Record<string, { unlocked: boolean; claimed: boolean }>;
-  pendingUnlocks: string[];        // achievement IDs to show toast for
-  pityCounters: Record<string, number>; // rarity → packs since last pull
+  collection: Record<string, number>; // footballer ID → copies owned
+  pullHistory: { footballerId: string; pulledAt: string }[];
+  teams: Team[];                    // 1-5 teams
+  activeTeamId: string;             // ID of the active team
+  achievements: Record<string, { unlockedAt: string }>;
+  claimedAchievements: Record<string, true>;
+  pendingUnlocks: string[];         // achievement IDs to show toast for
+  pityCounters: Record<string, number>; // pack ID → packs since last pull
   totalCompletions: number;
   coachCollection: Record<string, number>; // coach ID → level (1-3)
-  assignedCoach: string | null;    // active coach ID
-  following: string[];             // user IDs being followed
-  lastTriviaDate: string;          // YYYY-MM-DD
-  triviaHistory: number[];         // answered question indices
-  _stateLoaded: boolean;           // flag: Supabase state has been imported
+  following: string[];              // user IDs being followed
+  lastTriviaDate: string | null;    // YYYY-MM-DD
+  triviaHistory: number[];          // answered question indices
+  _stateLoaded: boolean;            // flag: Supabase state has been imported
 }
 ```
+
+### Key Helper: `getActiveTeam(state)` (`src/lib/teamHelpers.ts`)
+Returns the active team from `state.teams` by matching `state.activeTeamId`. Falls back to `teams[0]` if ID is stale.
 
 ### Key Actions
 
@@ -160,17 +172,21 @@ interface AppState {
 | `updateHabit(id, updates)` | Merge updates into existing habit |
 | `removeHabit(id)` | Filter habit out by ID |
 | `reorderHabits(newOrder)` | Replace habits array (from drag-and-drop) |
-| `completeHabit(id)` | Calculate coins, update streak, add coins, increment completions, check achievements |
+| `completeHabit(id)` | Calculate coins (using active team's chemistry/coach), update streak, add coins, check achievements |
 | `buyPack(packId)` | Deduct cost, call `openPack()`, add new cards to collection, handle duplicates, update pity |
 | `buyCoachPack()` | Deduct 500, random coach, add/level-up in coachCollection |
-| `setSquadSlot(slot, playerId)` | Assign player to formation slot |
-| `setFormation(formation)` | Change active formation |
-| `assignCoach(coachId)` | Set active coach |
+| `setSquadSlot(teamId, slotIndex, playerId)` | Assign player to formation slot on a specific team |
+| `setFormation(teamId, formation)` | Change formation on a specific team (resets squad to empty) |
+| `assignCoach(teamId, coachId)` | Set coach on a specific team |
+| `createTeam(name)` | Add new team (max 5, empty squad, 4-3-3, no coach) |
+| `renameTeam(teamId, name)` | Update team name (1-30 chars) |
+| `deleteTeam(teamId)` | Remove team (blocked if active or last remaining) |
+| `setActiveTeam(teamId)` | Change which team is active |
 | `unlockAchievement(id)` | Mark achievement as unlocked, add to pendingUnlocks |
 | `claimAchievementReward(id)` | Mark claimed, add reward coins |
 | `answerTrivia(index)` | Add to triviaHistory, update lastTriviaDate |
-| `importState(state)` | Merge cloud state into store (used on login/sync) |
-| `resetAll()` | Factory reset all state to defaults |
+| `importState(state)` | Merge cloud state into store; auto-migrates old single-team format |
+| `resetAll()` | Factory reset all state to defaults (single default team) |
 
 ### Sync Mechanism
 - `syncSubscribe()` is called once on auth → subscribes to Zustand store changes.
@@ -272,10 +288,12 @@ Collection
 └── CoachCard (×N, owned coaches)
 
 Team
-├── PitchHelpers (SVG pitch + player positions)
-├── Formation selector
-├── Coach selector
-├── FootballerCard (draggable, in squad slots)
+├── Team tabs (switch between 1-5 teams, create new)
+├── Active team indicator + rename/delete controls
+├── PitchHelpers (SVG pitch + player positions, scoped to viewed team)
+├── Formation selector (scoped to viewed team)
+├── Coach selector (scoped to viewed team)
+├── FootballerCard (in squad slots, scoped to viewed team)
 └── Chemistry visualization (lines between linked players)
 
 Achievements

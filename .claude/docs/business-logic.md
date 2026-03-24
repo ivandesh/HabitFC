@@ -139,6 +139,34 @@ Three packs with different rarity weights:
 
 ## 5. Squad / Team System
 
+### Multi-Team System (`src/lib/teamHelpers.ts`)
+Users can create up to **5 named teams**, each with its own squad, formation, and coach. One team is the **active team** at any time.
+
+#### Team Properties
+- **id:** unique string (`crypto.randomUUID()`)
+- **name:** user-defined, 1–30 characters (e.g., "ULTRAS FC")
+- **squad:** array of 11 slots, each `string | null` (footballer IDs)
+- **formation:** string (e.g., "4-3-3")
+- **assignedCoach:** coach ID or null
+
+#### Active Team
+The active team determines:
+- Chemistry bonus applied to ALL habit coin earnings
+- Battle squad snapshot (challenges use active team)
+- Coach perk effects on habit completions
+- Squad-related achievement checks (e.g., "fill all 11 slots")
+
+#### Team Constraints
+- Minimum 1 team, maximum 5 teams
+- Cannot delete the last remaining team (it is always active)
+- Cannot delete the active team — must switch active to another team first
+- Players are shared across teams (same footballer can appear in multiple teams)
+- Same coach can be assigned to multiple teams
+- Team names: 1–30 characters, trimmed, no uniqueness enforced
+
+#### State Migration
+Old single-team state (with top-level `squad`/`formation`/`assignedCoach`) is auto-migrated to multi-team format in `importState`. The old fields are wrapped into a single team named "Команда 1".
+
 ### Formation System (`src/lib/formations.ts`)
 5 formations available:
 - **4-3-3** (default)
@@ -153,23 +181,21 @@ Each formation defines 11 slots with:
 - Visual x/y percentage for pitch rendering
 
 ### Squad Building
-- User drags owned footballers into formation slots.
+- User places owned footballers into formation slots on a per-team basis.
 - Each slot has a preferred position category.
 - Players CAN be placed in any slot (no hard restriction), but position mismatch affects battle strength.
-- Each player can only occupy one slot.
+- Each player can only occupy one slot within a team.
 
 ### Chemistry System (`src/lib/bonuses.ts`)
 - **Club link:** Two+ players from the same club → bonus percentage.
 - **Nationality link:** Two+ players from the same country → bonus percentage.
 - Chemistry bonuses stack but are **capped at 40% total**.
 - Visual: colored lines drawn between linked players on the pitch.
-- Chemistry bonus applies as a percentage increase to ALL habit coin earnings.
+- Chemistry bonus from the **active team** applies as a percentage increase to ALL habit coin earnings.
 
-### `computeActiveBonuses(squad, footballerMap)`
-Returns an array of active bonuses, each with:
-- Type (club/nationality)
-- Name (club or country name)
-- Count (how many matching players)
+### `computeActiveBonuses(squad)`
+Takes a squad array `(string | null)[]` directly. Returns an array of active bonuses, each with:
+- Label (count + club/country name)
 - Percentage bonus (2% for 2 players, scaling up with more)
 
 ### `totalBonusPercent(bonuses)`
