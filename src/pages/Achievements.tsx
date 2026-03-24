@@ -23,17 +23,17 @@ export function Achievements() {
       claimedAchievements: state.claimedAchievements,
       totalCompletions: state.totalCompletions,
       collection: state.collection,
-      squad: state.squad,
+      teams: state.teams,
+      activeTeamId: state.activeTeamId,
       coachCollection: state.coachCollection,
-      assignedCoach: state.assignedCoach,
-      // Include remaining AppState fields with defaults so progressFn never crashes
       coins: state.coins,
       habits: state.habits,
       pullHistory: state.pullHistory,
-      formation: state.formation,
       pendingUnlocks: state.pendingUnlocks,
       pityCounters: state.pityCounters,
       following: state.following,
+      lastTriviaDate: state.lastTriviaDate,
+      triviaHistory: state.triviaHistory,
     }))
   ) as AppState
   const { achievements, claimedAchievements } = progressState

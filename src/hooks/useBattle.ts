@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuthStore } from '../store/useAuthStore'
 import { useAppStore } from '../store/useAppStore'
-import type { Challenge, Match, SquadSnapshot } from '../types'
+import type { Challenge, Match, SquadSnapshot, AppState } from '../types'
 import {
   sendChallenge as apiSendChallenge,
   cancelChallenge as apiCancelChallenge,
@@ -16,6 +16,7 @@ import {
   fetchUnwatchedMatches,
 } from '../lib/battleApi'
 import { fetchUserProfile } from '../lib/profileSync'
+import { getActiveTeam } from '../lib/teamHelpers'
 import { simulateMatch, pickAutoBench } from '../lib/battleEngine'
 import { createRng, hashSeed } from '../lib/seededRng'
 import { getWatchedSet, markWatched } from '../lib/watchedMatches'
@@ -71,12 +72,13 @@ export function useBattle() {
 
   function buildMySnapshot(): SquadSnapshot {
     const s = state()
-    const squadIds = s.squad.filter((id): id is string => id !== null)
+    const activeTeam = getActiveTeam(s)
+    const squadIds = activeTeam.squad.filter((id): id is string => id !== null)
     return {
       squad: squadIds,
-      formation: s.formation,
-      coachId: s.assignedCoach ?? '',
-      coachLevel: s.assignedCoach ? (s.coachCollection[s.assignedCoach] ?? 1) : 1,
+      formation: activeTeam.formation,
+      coachId: activeTeam.assignedCoach ?? '',
+      coachLevel: activeTeam.assignedCoach ? (s.coachCollection[activeTeam.assignedCoach] ?? 1) : 1,
       maxHabitStreak: Math.max(0, ...s.habits.map(h => h.streak)),
       bench: pickAutoBench(Object.keys(s.collection), squadIds),
     }
@@ -170,17 +172,31 @@ export function useBattle() {
     reason?: string
   }> {
     const s = state()
-    const filledSlots = s.squad.filter(id => id !== null).length
+    const myTeam = getActiveTeam(s)
+    const filledSlots = myTeam.squad.filter(id => id !== null).length
     if (filledSlots < 11) return { canChallenge: false, reason: 'Заповніть склад (11/11)' }
-    if (!s.assignedCoach) return { canChallenge: false, reason: 'Призначте тренера' }
+    if (!myTeam.assignedCoach) return { canChallenge: false, reason: 'Призначте тренера' }
 
-    // Check friend's squad
     const profile = await fetchUserProfile(friendId)
     if (!profile) return { canChallenge: false, reason: 'Профіль не знайдено' }
     const friendState = profile.state
-    const friendFilled = (friendState.squad ?? []).filter((id: string | null) => id !== null).length
+
+    // Handle old or new state format for friend
+    let friendSquad: (string | null)[]
+    let friendCoach: string | null
+    if (Array.isArray(friendState.teams) && friendState.teams.length > 0) {
+      const friendActiveTeam = getActiveTeam(friendState as AppState)
+      friendSquad = friendActiveTeam.squad
+      friendCoach = friendActiveTeam.assignedCoach
+    } else {
+      // Old format
+      friendSquad = (friendState as Record<string, unknown>).squad as (string | null)[] ?? []
+      friendCoach = (friendState as Record<string, unknown>).assignedCoach as string | null ?? null
+    }
+
+    const friendFilled = friendSquad.filter(id => id !== null).length
     if (friendFilled < 11) return { canChallenge: false, reason: 'У друга неповний склад' }
-    if (!friendState.assignedCoach) return { canChallenge: false, reason: 'У друга немає тренера' }
+    if (!friendCoach) return { canChallenge: false, reason: 'У друга немає тренера' }
 
     const pending = await apiHasPendingChallenge(userId, friendId)
     if (pending) return { canChallenge: false, reason: 'Виклик вже відправлено' }

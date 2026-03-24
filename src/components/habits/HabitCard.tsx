@@ -10,6 +10,7 @@ import { computeActiveBonuses, totalBonusPercent } from '../../lib/bonuses'
 import { computeCoachHabitBonus, computeCoachChemistryPct, getAssignedCoach } from '../../lib/coachPerks'
 import { footballerMap } from '../../data/footballers'
 import { playHabitComplete } from '../../lib/sounds'
+import { getActiveTeam } from '../../lib/teamHelpers'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
@@ -33,13 +34,15 @@ export function HabitCard({ habit, onEdit, compact }: Props) {
   const completeHabit = useAppStore(state => state.completeHabit)
   const removeHabit = useAppStore(state => state.removeHabit)
   // Select only the slices needed — primitives/arrays so Object.is stays stable
-  const { squad, assignedCoach, coachCollection, habits: allHabits } = useAppStore(
-    useShallow(state => ({
-      squad: state.squad,
-      assignedCoach: state.assignedCoach,
-      coachCollection: state.coachCollection,
-      habits: state.habits,
-    }))
+  const { activeTeam, coachCollection, habits: allHabits } = useAppStore(
+    useShallow(state => {
+      const at = getActiveTeam(state)
+      return {
+        activeTeam: at,
+        coachCollection: state.coachCollection,
+        habits: state.habits,
+      }
+    })
   )
   const [tooltipOpen, setTooltipOpen] = useState(false)
   const [tooltipPos, setTooltipPos] = useState({ top: 0, left: 0 })
@@ -57,13 +60,12 @@ export function HabitCard({ habit, onEdit, compact }: Props) {
 
   // Full projected reward breakdown — mirrors completeHabit logic in the store
   const breakdown = useMemo(() => {
-    const partialState = { squad, assignedCoach, coachCollection, habits: allHabits }
     const newStreak = calculateNewStreak(habit.streak, habit.lastCompleted)
     const streakMult = streakMultiplier(newStreak)
     const afterStreak = Math.round(habit.coinValue * streakMult)
-    const squadChemPct = totalBonusPercent(computeActiveBonuses(partialState as Parameters<typeof computeActiveBonuses>[0]))
-    const coach = getAssignedCoach(partialState as Parameters<typeof getAssignedCoach>[0])
-    const squadPlayers = (squad ?? [])
+    const squadChemPct = totalBonusPercent(computeActiveBonuses(activeTeam.squad))
+    const coach = getAssignedCoach(activeTeam.assignedCoach)
+    const squadPlayers = activeTeam.squad
       .filter((id): id is string => id !== null)
       .map(id => footballerMap.get(id))
       .filter((f): f is NonNullable<typeof f> => f !== undefined)
@@ -71,7 +73,11 @@ export function HabitCard({ habit, onEdit, compact }: Props) {
     const chemistryPct = squadChemPct + coachChemPct
     const withChemistry = Math.round(afterStreak * (1 + chemistryPct / 100))
     const chemistryBonus = withChemistry - afterStreak
-    const coachBonus = computeCoachHabitBonus(partialState as Parameters<typeof computeCoachHabitBonus>[0], habit.id, withChemistry, newStreak)
+    const coachBonus = computeCoachHabitBonus(
+      { habits: allHabits, coachCollection },
+      activeTeam,
+      habit.id, withChemistry, newStreak
+    )
     return {
       base: habit.coinValue,
       afterStreak,
@@ -81,7 +87,7 @@ export function HabitCard({ habit, onEdit, compact }: Props) {
       coachBonus,
       total: withChemistry + coachBonus,
     } satisfies EarnBreakdown
-  }, [habit, squad, assignedCoach, coachCollection, allHabits])
+  }, [habit, activeTeam, coachCollection, allHabits])
   const earned = breakdown.total
   const hasBonus = breakdown.chemistryPct > 0 || breakdown.coachBonus > 0
 

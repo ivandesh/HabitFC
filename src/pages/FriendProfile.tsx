@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { fetchUserProfile } from '../lib/profileSync'
+import { getActiveTeam } from '../lib/teamHelpers'
 import { footballers, footballerMap, playerOverall } from '../data/footballers'
 import { FORMATIONS } from '../lib/formations'
 import { FootballerCard } from '../components/cards/FootballerCard'
@@ -10,7 +11,7 @@ import type { AppState, Footballer } from '../types'
 
 // ── Read-only pitch ────────────────────────────────────────────────────────────
 
-function ReadOnlyPitch({ squad, formation, onSelect }: { squad: AppState['squad']; formation: string; onSelect: (f: Footballer) => void }) {
+function ReadOnlyPitch({ squad, formation, onSelect }: { squad: (string | null)[]; formation: string; onSelect: (f: Footballer) => void }) {
   const formationDef = FORMATIONS[formation] ?? FORMATIONS['4-3-3']
   const SLOTS = formationDef.slots
 
@@ -116,8 +117,17 @@ export function FriendProfile() {
   }
 
   const { username, avatar_url, avatar_emoji, state } = profile
-  const squad = state.squad ?? Array<string | null>(11).fill(null)
-  const formation = state.formation ?? '4-3-3'
+  let squad: (string | null)[]
+  let formation: string
+  if (Array.isArray((state as Record<string, unknown>).teams) && ((state as Record<string, unknown>).teams as unknown[]).length > 0) {
+    const activeTeam = getActiveTeam(state as AppState)
+    squad = activeTeam.squad
+    formation = activeTeam.formation
+  } else {
+    // Old format friend
+    squad = ((state as Record<string, unknown>).squad as (string | null)[] | undefined) ?? Array(11).fill(null)
+    formation = ((state as Record<string, unknown>).formation as string | undefined) ?? '4-3-3'
+  }
   const collection = state.collection ?? {}
 
   const ownedFootballers = footballers.filter(f => (collection[f.id] ?? 0) > 0)
