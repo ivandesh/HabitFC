@@ -320,7 +320,7 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           lastTriviaDate: data.lastTriviaDate ?? null,
           triviaHistory: data.triviaHistory ?? [],
           _stateLoaded: true,
-        } as AppStore, true)
+        } as unknown as AppStore, true)
       },
 
       unlockAchievement: (id) => {

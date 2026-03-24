@@ -190,8 +190,8 @@ export function useBattle() {
       friendCoach = friendActiveTeam.assignedCoach
     } else {
       // Old format
-      friendSquad = (friendState as Record<string, unknown>).squad as (string | null)[] ?? []
-      friendCoach = (friendState as Record<string, unknown>).assignedCoach as string | null ?? null
+      friendSquad = (friendState as unknown as Record<string, unknown>).squad as (string | null)[] ?? []
+      friendCoach = (friendState as unknown as Record<string, unknown>).assignedCoach as string | null ?? null
     }
 
     const friendFilled = friendSquad.filter(id => id !== null).length

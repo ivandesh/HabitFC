@@ -119,14 +119,15 @@ export function FriendProfile() {
   const { username, avatar_url, avatar_emoji, state } = profile
   let squad: (string | null)[]
   let formation: string
-  if (Array.isArray((state as Record<string, unknown>).teams) && ((state as Record<string, unknown>).teams as unknown[]).length > 0) {
+  const stateAny = state as unknown as Record<string, unknown>
+  if (Array.isArray(stateAny.teams) && (stateAny.teams as unknown[]).length > 0) {
     const activeTeam = getActiveTeam(state as AppState)
     squad = activeTeam.squad
     formation = activeTeam.formation
   } else {
     // Old format friend
-    squad = ((state as Record<string, unknown>).squad as (string | null)[] | undefined) ?? Array(11).fill(null)
-    formation = ((state as Record<string, unknown>).formation as string | undefined) ?? '4-3-3'
+    squad = (stateAny.squad as (string | null)[] | undefined) ?? Array(11).fill(null)
+    formation = (stateAny.formation as string | undefined) ?? '4-3-3'
   }
   const collection = state.collection ?? {}
 
