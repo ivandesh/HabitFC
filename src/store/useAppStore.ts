@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Habit, Footballer, AppState } from '../types'
+import type { Habit, Footballer, AppState, Team } from '../types'
 import { scheduleSave, flushSave } from '../lib/stateSync'
 import { calculateNewStreak, streakMultiplier, isCompletedToday, getToday } from '../lib/streaks'
 import { duplicateRefund } from '../lib/gacha'
@@ -7,6 +7,9 @@ import { footballerMap } from '../data/footballers'
 import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
 import { checkAchievements, ACHIEVEMENTS } from '../lib/achievements'
 import { computeCoachHabitBonus, computeCoachChemistryPct, getAssignedCoach } from '../lib/coachPerks'
+import { getActiveTeam, createDefaultTeam, migrateOldState, updateTeamInArray } from '../lib/teamHelpers'
+
+const _initTeamId = crypto.randomUUID()
 
 interface AppStore extends AppState {
   // Habit actions
@@ -20,11 +23,18 @@ interface AppStore extends AppState {
   pushPendingUnlock: (id: string) => void
   // Coins
   addCoins: (amount: number) => void
-  // Squad
-  setSquadSlot: (slotIndex: number, footballerId: string | null) => void
-  // Coach
-  assignCoach: (coachId: string | null) => void
+  // Squad — now takes teamId
+  setSquadSlot: (teamId: string, slotIndex: number, footballerId: string | null) => void
+  // Coach — now takes teamId
+  assignCoach: (teamId: string, coachId: string | null) => void
   buyCoachPack: (coachId: string, cost: number) => { isLevelUp: boolean; newLevel: number; refundCoins: number; newUnlockIds: string[] }
+  // Formation — now takes teamId
+  setFormation: (teamId: string, formation: string) => void
+  // New team actions
+  createTeam: (name: string) => void
+  renameTeam: (teamId: string, name: string) => void
+  deleteTeam: (teamId: string) => void
+  setActiveTeam: (teamId: string) => void
   // Reset
   resetAll: () => void
   // Import/Export
@@ -33,7 +43,6 @@ interface AppStore extends AppState {
   unlockAchievement: (id: string) => void
   claimAchievementReward: (id: string) => void
   drainPendingUnlock: () => string | undefined
-  setFormation: (formation: string) => void
   setFollowing: (ids: string[]) => void
   answerTrivia: (questionId: number, correct: boolean) => void
   // Non-persisted UI state
@@ -45,15 +54,14 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       habits: [],
       collection: {},
       pullHistory: [],
-      squad: Array(11).fill(null),
+      teams: [{ id: _initTeamId, name: 'Команда 1', squad: Array(11).fill(null), formation: '4-3-3', assignedCoach: null }],
+      activeTeamId: _initTeamId,
       achievements: {},
       claimedAchievements: {},
       totalCompletions: 0,
-      formation: '4-3-3',
       pendingUnlocks: [],
       pityCounters: {},
       coachCollection: {},
-      assignedCoach: null,
       following: [],
       lastTriviaDate: null,
       triviaHistory: [],
@@ -93,16 +101,17 @@ export const useAppStore = create<AppStore>()((set, get) => ({
           const newStreak = calculateNewStreak(habit.streak, habit.lastCompleted)
           const multiplier = streakMultiplier(newStreak)
           const baseCoin = Math.round(habit.coinValue * multiplier)
-          const bonuses = computeActiveBonuses(state)
+          const activeTeam = getActiveTeam(state)
+          const bonuses = computeActiveBonuses(activeTeam.squad)
           const bonusPct = totalBonusPercent(bonuses)
-          const coach = getAssignedCoach(state)
-          const squadPlayers = (state.squad ?? [])
+          const coach = getAssignedCoach(activeTeam.assignedCoach)
+          const squadPlayers = activeTeam.squad
             .filter((id): id is string => id !== null)
             .map(id => footballerMap.get(id))
             .filter((f): f is Footballer => f !== undefined)
           const coachChemPct = coach ? computeCoachChemistryPct(coach, squadPlayers) : 0
           const earned = Math.round(baseCoin * (1 + (bonusPct + coachChemPct) / 100))
-          const coachBonus = computeCoachHabitBonus(state, id, earned, newStreak)
+          const coachBonus = computeCoachHabitBonus(state, activeTeam, id, earned, newStreak)
           const total = earned + coachBonus
 
           return {
@@ -166,8 +175,10 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         return { refund, newCards, newUnlockIds }
       },
 
-      assignCoach: (coachId) => {
-        set({ assignedCoach: coachId })
+      assignCoach: (teamId, coachId) => {
+        set(state => ({
+          teams: updateTeamInArray(state.teams, teamId, { assignedCoach: coachId }),
+        }))
         const newUnlocks = checkAchievements(get())
         for (const achievementId of newUnlocks) {
           get().unlockAchievement(achievementId)
@@ -214,33 +225,73 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         set(state => ({ coins: state.coins + amount }))
       },
 
-      setSquadSlot: (slotIndex, footballerId) => {
-        set(state => {
-          const squad = [...(state.squad ?? Array(11).fill(null))]
-          squad[slotIndex] = footballerId
-          return { squad }
-        })
+      setSquadSlot: (teamId, slotIndex, footballerId) => {
+        set(state => ({
+          teams: updateTeamInArray(state.teams, teamId, {
+            squad: state.teams.find(t => t.id === teamId)!.squad.map(
+              (id, i) => i === slotIndex ? footballerId : id
+            ),
+          }),
+        }))
         const newUnlocks = checkAchievements(get())
         for (const achievementId of newUnlocks) {
           get().unlockAchievement(achievementId)
         }
       },
 
+      setFormation: (teamId, formation) => {
+        set(state => ({
+          teams: updateTeamInArray(state.teams, teamId, {
+            formation,
+            squad: Array(11).fill(null),
+          }),
+        }))
+      },
+
+      createTeam: (name) => {
+        set(state => {
+          if (state.teams.length >= 5) return state
+          const trimmed = name.trim().slice(0, 30)
+          if (!trimmed) return state
+          return { teams: [...state.teams, createDefaultTeam(trimmed)] }
+        })
+      },
+
+      renameTeam: (teamId, name) => {
+        const trimmed = name.trim().slice(0, 30)
+        if (!trimmed) return
+        set(state => ({
+          teams: updateTeamInArray(state.teams, teamId, { name: trimmed }),
+        }))
+      },
+
+      deleteTeam: (teamId) => {
+        set(state => {
+          if (state.teams.length <= 1) return state
+          if (state.activeTeamId === teamId) return state
+          return { teams: state.teams.filter((t: Team) => t.id !== teamId) }
+        })
+      },
+
+      setActiveTeam: (teamId) => {
+        set({ activeTeamId: teamId })
+      },
+
       resetAll: () => {
+        const freshTeam = createDefaultTeam()
         set({
           coins: 200,
           habits: [],
           collection: {},
           pullHistory: [],
-          squad: Array(11).fill(null),
+          teams: [freshTeam],
+          activeTeamId: freshTeam.id,
           achievements: {},
           claimedAchievements: {},
           totalCompletions: 0,
-          formation: '4-3-3',
           pendingUnlocks: [],
           pityCounters: {},
           coachCollection: {},
-          assignedCoach: null,
           following: [],
           lastTriviaDate: null,
           triviaHistory: [],
@@ -248,25 +299,28 @@ export const useAppStore = create<AppStore>()((set, get) => ({
       },
 
       importState: (data) => {
+        const migrated = migrateOldState(data as Record<string, unknown>)
+        const teams = migrated ? migrated.teams : (data.teams ?? [createDefaultTeam()])
+        const activeTeamId = migrated ? migrated.activeTeamId : (data.activeTeamId ?? teams[0]?.id ?? '')
+
         set({
           coins: data.coins ?? 200,
           habits: data.habits ?? [],
           collection: data.collection ?? {},
           pullHistory: data.pullHistory ?? [],
-          squad: data.squad ?? Array(11).fill(null),
+          teams,
+          activeTeamId,
           achievements: data.achievements ?? {},
           claimedAchievements: data.claimedAchievements ?? {},
           totalCompletions: data.totalCompletions ?? 0,
-          formation: data.formation ?? '4-3-3',
           pendingUnlocks: [],
           pityCounters: data.pityCounters ?? {},
           coachCollection: data.coachCollection ?? {},
-          assignedCoach: data.assignedCoach ?? null,
           following: data.following ?? [],
           lastTriviaDate: data.lastTriviaDate ?? null,
           triviaHistory: data.triviaHistory ?? [],
           _stateLoaded: true,
-        })
+        } as AppStore, true)
       },
 
       unlockAchievement: (id) => {
@@ -300,11 +354,6 @@ export const useAppStore = create<AppStore>()((set, get) => ({
         const [next, ...rest] = state.pendingUnlocks
         set({ pendingUnlocks: rest })
         return next
-      },
-
-      /** Updates formation and resets squad to all-null (positions change between formations). */
-      setFormation: (formation) => {
-        set({ formation, squad: Array(11).fill(null) })
       },
 
       setFollowing: (ids) => {
