@@ -7,9 +7,9 @@ export function getCoachLevel(coachId: string, coachCollection: Record<string, n
   return Math.min(coachCollection[coachId] ?? 0, 3)
 }
 
-export function getAssignedCoach(state: Pick<AppState, 'assignedCoach'>): Coach | null {
-  if (!state.assignedCoach) return null
-  return coaches.find((c: Coach) => c.id === state.assignedCoach) ?? null
+export function getAssignedCoach(assignedCoachId: string | null): Coach | null {
+  if (!assignedCoachId) return null
+  return coaches.find((c: Coach) => c.id === assignedCoachId) ?? null
 }
 
 /**
@@ -18,13 +18,14 @@ export function getAssignedCoach(state: Pick<AppState, 'assignedCoach'>): Coach 
  * state is the state BEFORE this habit is committed to storage.
  */
 export function computeCoachHabitBonus(
-  state: AppState,
+  state: Pick<AppState, 'habits' | 'coachCollection'>,
+  activeTeam: { squad: (string | null)[]; assignedCoach: string | null },
   habitId: string,
   baseEarned: number,
   newStreak: number,
 ): number {
-  if (!state.assignedCoach) return 0
-  const coach = getAssignedCoach(state)
+  if (!activeTeam.assignedCoach) return 0
+  const coach = getAssignedCoach(activeTeam.assignedCoach)
   if (!coach) return 0
   const level = getCoachLevel(coach.id, state.coachCollection)
   if (level === 0) return 0
@@ -69,12 +70,12 @@ export function computeCoachHabitBonus(
       return state.habits.length >= (perk.minHabits ?? 0) ? value : 0
 
     case 'squad_full_pct':
-      return state.squad.filter(Boolean).length === 11
+      return activeTeam.squad.filter(Boolean).length === 11
         ? Math.round(baseEarned * value / 100)
         : 0
 
     case 'squad_min_pct':
-      return state.squad.filter(Boolean).length >= (perk.minPlayers ?? 0)
+      return activeTeam.squad.filter(Boolean).length >= (perk.minPlayers ?? 0)
         ? Math.round(baseEarned * value / 100)
         : 0
 
@@ -90,11 +91,11 @@ export function computeCoachHabitBonus(
  * Apply coach stat boost to a footballer at render time.
  * Returns a new Footballer object — never mutates base data.
  */
-export function applyCoachStatBoost(footballer: Footballer, state: AppState): Footballer {
-  if (!state.assignedCoach) return footballer
-  const coach = getAssignedCoach(state)
+export function applyCoachStatBoost(footballer: Footballer, assignedCoachId: string | null, coachCollection: Record<string, number>): Footballer {
+  if (!assignedCoachId) return footballer
+  const coach = getAssignedCoach(assignedCoachId)
   if (!coach || coach.perk.type !== 'stat_boost') return footballer
-  const level = getCoachLevel(coach.id, state.coachCollection)
+  const level = getCoachLevel(coach.id, coachCollection)
   if (level === 0) return footballer
 
   const { stat, position, rarityFilter, values } = coach.perk

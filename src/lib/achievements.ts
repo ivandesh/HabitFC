@@ -1,5 +1,6 @@
 import { footballers, footballerMap } from '../data/footballers'
 import type { AppState } from '../types'
+import { getActiveTeam } from './teamHelpers'
 
 export interface AchievementDef {
   id: string
@@ -230,11 +231,8 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'team',
     icon: '⚽',
     coinReward: 10,
-    progressFn: s => ({
-      current: s.squad.filter(Boolean).length,
-      total: 11,
-    }),
-    condition: s => s.squad.filter(Boolean).length === 11,
+    progressFn: s => ({ current: getActiveTeam(s).squad.filter(Boolean).length, total: 11 }),
+    condition: s => getActiveTeam(s).squad.filter(Boolean).length === 11,
   },
   {
     id: 'dream_chemistry',
@@ -244,7 +242,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: '🧪',
     coinReward: 50,
     condition: s => {
-      const players = s.squad
+      const players = getActiveTeam(s).squad
         .filter((id): id is string => id !== null)
         .map(id => footballerMap.get(id))
         .filter(Boolean) as typeof footballers
@@ -264,7 +262,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     icon: '🌟',
     coinReward: 100,
     condition: s => {
-      const players = s.squad
+      const players = getActiveTeam(s).squad
         .filter((id): id is string => id !== null)
         .map(id => footballerMap.get(id))
         .filter(Boolean) as typeof footballers
@@ -445,7 +443,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'memes',
     icon: '😏',
     coinReward: 10,
-    condition: s => s.assignedCoach === 'mourinho',
+    condition: s => getActiveTeam(s).assignedCoach === 'mourinho',
   },
   {
     id: 'pep_or_pep',
@@ -463,7 +461,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
     category: 'memes',
     icon: '😁',
     coinReward: 10,
-    condition: s => s.assignedCoach === 'klopp',
+    condition: s => getActiveTeam(s).assignedCoach === 'klopp',
   },
   {
     id: 'invincible_process',

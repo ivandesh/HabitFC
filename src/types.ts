@@ -31,20 +31,27 @@ export interface Pack {
   weights: Record<Rarity, number>
 }
 
+export interface Team {
+  id: string
+  name: string
+  squad: (string | null)[]
+  formation: string
+  assignedCoach: string | null
+}
+
 export interface AppState {
   coins: number
   habits: Habit[]
   collection: Record<string, number>
   pullHistory: { footballerId: string; pulledAt: string }[]
-  squad: (string | null)[]
+  teams: Team[]
+  activeTeamId: string
   achievements: Record<string, { unlockedAt: string }>
   claimedAchievements: Record<string, true>
   totalCompletions: number
-  formation: string
   pendingUnlocks: string[]  // not persisted — UI drain queue
   pityCounters: Record<string, number>  // keyed by pack id
   coachCollection: Record<string, number>   // coachId → copies owned
-  assignedCoach: string | null
   following: string[]           // user_ids this user follows
   lastTriviaDate: string | null       // YYYY-MM-DD of last answered trivia
   triviaHistory: number[]             // IDs of previously answered questions

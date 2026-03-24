@@ -1,13 +1,13 @@
 import { footballerMap } from '../data/footballers'
-import type { AppState, Footballer } from '../types'
+import type { Footballer } from '../types'
 
 export interface BonusEntry {
   label: string
   percent: number
 }
 
-export function computeActiveBonuses(state: AppState): BonusEntry[] {
-  const squadPlayers = (state.squad ?? [])
+export function computeActiveBonuses(squad: (string | null)[]): BonusEntry[] {
+  const squadPlayers = squad
     .filter((id): id is string => id !== null)
     .map(id => footballerMap.get(id))
     .filter((f): f is Footballer => f !== undefined)
