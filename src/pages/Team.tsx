@@ -3,7 +3,7 @@ import { useAppStore } from '../store/useAppStore'
 import { footballers, footballerMap, playerOverall } from '../data/footballers'
 import { CoinDisplay } from '../components/ui/CoinDisplay'
 import { FORMATIONS, FORMATION_KEYS } from '../lib/formations'
-import { computeActiveBonuses, totalBonusPercent } from '../lib/bonuses'
+import { computeActiveBonuses, totalBonusPercent, computeNearThresholdHints } from '../lib/bonuses'
 import type { Position, Footballer } from '../types'
 import { coaches as allCoaches } from '../data/coaches'
 import { computeCoachChemistryPct, getCoachLevel, applyCoachStatBoost } from '../lib/coachPerks'
@@ -160,6 +160,11 @@ export function Team() {
 
   const activeBonuses = useMemo(() => computeActiveBonuses(viewedTeam.squad), [viewedTeam.squad])
   const bonusPct = totalBonusPercent(activeBonuses)
+
+  const nearHints = useMemo(
+    () => computeNearThresholdHints(viewedTeam.squad, collection),
+    [viewedTeam.squad, collection]
+  )
 
   const assignedCoachObj = useMemo(
     () => assignedCoach ? allCoaches.find(c => c.id === assignedCoach) ?? null : null,
@@ -445,18 +450,39 @@ export function Team() {
         </div>
       </div>
 
-      {/* Active bonuses panel */}
-      {activeBonuses.length > 0 && (
+      {/* Active bonuses + near-threshold hints panel */}
+      {(activeBonuses.length > 0 || nearHints.length > 0) && (
         <div className="mb-4 bg-[#0A0F1A] border border-[#FBBF24]/20 rounded-xl px-4 py-3">
-          <div className="text-[10px] text-[#5A7090] uppercase tracking-wider mb-2 font-oswald">Активні бонуси</div>
-          <div className="flex flex-wrap gap-2">
-            {activeBonuses.map((b, i) => (
-              <div key={i} className="flex items-center gap-1.5 bg-[#FBBF24]/10 border border-[#FBBF24]/20 rounded-lg px-2 py-1">
-                <span className="text-[10px] text-[#5A7090]">{b.label}</span>
-                <span className="text-[10px] font-oswald font-bold text-[#FBBF24]">+{b.percent}%</span>
+          {activeBonuses.length > 0 && (
+            <>
+              <div className="text-[10px] text-[#5A7090] uppercase tracking-wider mb-2 font-oswald">Активні бонуси</div>
+              <div className="flex flex-wrap gap-2">
+                {activeBonuses.map((b, i) => (
+                  <div key={i} className="flex items-center gap-1.5 bg-[#FBBF24]/10 border border-[#FBBF24]/20 rounded-lg px-2 py-1">
+                    <span className="text-[10px] text-[#5A7090]">{b.label}</span>
+                    <span className="text-[10px] font-oswald font-bold text-[#FBBF24]">+{b.percent}%</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
+            </>
+          )}
+          {nearHints.length > 0 && (
+            <>
+              {activeBonuses.length > 0 && (
+                <div className="border-t border-[#FBBF24]/10 my-2.5" />
+              )}
+              <div className="text-[10px] text-[#5A7090] uppercase tracking-wider mb-2 font-oswald">Можливі бонуси</div>
+              <div className="flex flex-col gap-1.5">
+                {nearHints.map((h, i) => (
+                  <div key={i} className="flex items-center gap-1.5 text-[10px]">
+                    <span className="text-[#5A7090]">{h.label}</span>
+                    <span className="text-[#FBBF24]">→</span>
+                    <span className="text-[#5A7090]">ще 1 для <span className="font-oswald font-bold text-[#FBBF24]">+{h.potentialPct}%</span></span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
