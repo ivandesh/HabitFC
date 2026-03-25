@@ -29,7 +29,7 @@ A small toggle in the picker header, right-aligned next to the position label:
 
 - Two pill-style buttons, same style as existing formation selector pills
 - Default: **Рейтинг** (Rating) — current behavior
-- **Хімія** (Chemistry) — sorts by `totalDelta` descending (highest chemistry gain first), then by rating as tiebreaker
+- **Хімія** (Chemistry) — sorts by **combined** `totalDelta` (squad chemistry delta + coach chemistry delta, i.e., the same value shown on the badge) descending, then by rating as tiebreaker
 - Players with `totalDelta === 0` appear at the bottom, still sorted by rating
 - The yellow highlight + `+X%` badge stays as-is regardless of sort mode
 - Sort preference resets when picker closes (no persistence needed)
@@ -63,8 +63,10 @@ A new subsection below the existing active bonuses, separated by a subtle divide
 ### Rules
 - **Club:** Show hints for groups 1 player away from the next bonus tier (1→2 for +3%, 2→3 for +6%, 4→5 for +10%)
 - **Nationality:** Same logic (1→2 for +2%, 2→3 for +5%, 4→5 for +8%)
-- Only show hints where the user **owns** a player in their collection that could fill the gap (actionable hints only)
+- **Ownership check:** Only show hints where the user owns a matching player in their collection (same club or nationality), regardless of position. Hints are collection-wide suggestions, not slot-specific — the user decides where to place the player.
+- **Squad chemistry cap interaction:** Hints show the raw potential bonus, not the effective gain after the 40% squad cap. If squad chemistry is already at 40%, suppress all hints (no room for improvement). Coach chemistry is uncapped and not affected by this.
 - Cap at ~4 hints max, prioritized by potential % gain descending
+- **Empty state:** If there are near-threshold hints but zero active bonuses, show the hints section on its own (with the "Можливі бонуси" header). The bonuses panel becomes visible whenever either active bonuses or hints exist.
 - Style: muted text (`text-[#5A7090]`), smaller font than active bonuses, arrow (→) in `text-[#FBBF24]`
 
 ### Files Affected
@@ -91,7 +93,7 @@ Streak ≥3: +8 монет
 - Format: `⚡ {count} гравців → +{pct}% хімія`
 - Calculated against the **current squad** (filled slots only)
 - If 0 matches: don't show the line
-- Coaches sorted by chemistry % descending, then alphabetically as tiebreaker
+- Coaches sorted by chemistry % descending, then alphabetically as tiebreaker. This intentionally changes the current insertion-order rendering to surface the most relevant coaches first.
 - Currently assigned coach keeps its existing highlight border
 - Color: `text-[#FBBF24]` for the chemistry line (gold coach theme)
 
@@ -130,8 +132,9 @@ Replace the single `+X%` badge with a breakdown area at the bottom of the player
 - Count shows what the total would be *after* adding this player (e.g., "Inter 3" = this would be the 3rd Inter player)
 - Total delta `+X%` in bottom-right, bolder — replaces the current top-right badge
 - Only show tags for links that actually contribute (skip zero-delta)
-- If no chemistry contribution: no tags, no badge (current behavior preserved)
-- Tags use `text-[8px]` to fit within existing card width
+- **Cap edge case:** If squad chemistry is at 40% cap, individual club/nationality deltas may be positive but `totalDelta` is 0. In this case, still show the breakdown tags (so the user understands WHY it's +0%) but show the total as `+0%` in muted style rather than hiding everything.
+- If no chemistry contribution at all (no individual deltas, no coach link): no tags, no badge (current behavior preserved)
+- Tags use `text-[9px]` to fit within existing card width (consistent with smallest existing text in the app)
 
 ### Computation
 For each candidate player, compute:
