@@ -94,6 +94,57 @@ function computeChemistryDelta(
   return newPct - currentPct
 }
 
+interface ChemBreakdownTag {
+  label: string
+  pct: number
+  type: 'club' | 'nation' | 'coach'
+}
+
+function computeChemistryBreakdown(
+  currentSquad: (string | null)[],
+  slotIndex: number,
+  candidateId: string,
+  assignedCoach: { clubs: string[] } | null
+): ChemBreakdownTag[] {
+  const candidate = footballerMap.get(candidateId)
+  if (!candidate) return []
+
+  const squadWithoutSlot = [...currentSquad]
+  squadWithoutSlot[slotIndex] = null
+
+  const squadPlayers = squadWithoutSlot
+    .filter((id): id is string => id !== null)
+    .map(id => footballerMap.get(id))
+    .filter((f): f is Footballer => f !== undefined)
+
+  const tags: ChemBreakdownTag[] = []
+
+  // Club delta
+  const clubCount = squadPlayers.filter(f => f.club === candidate.club).length
+  const clubCurPct = clubCount >= 5 ? 10 : clubCount >= 3 ? 6 : clubCount >= 2 ? 3 : 0
+  const clubNewCount = clubCount + 1
+  const clubNewPct = clubNewCount >= 5 ? 10 : clubNewCount >= 3 ? 6 : clubNewCount >= 2 ? 3 : 0
+  if (clubNewPct > clubCurPct) {
+    tags.push({ label: `${candidate.club} ${clubNewCount}`, pct: clubNewPct - clubCurPct, type: 'club' })
+  }
+
+  // Nationality delta
+  const natCount = squadPlayers.filter(f => f.nationality === candidate.nationality).length
+  const natCurPct = natCount >= 5 ? 8 : natCount >= 3 ? 5 : natCount >= 2 ? 2 : 0
+  const natNewCount = natCount + 1
+  const natNewPct = natNewCount >= 5 ? 8 : natNewCount >= 3 ? 5 : natNewCount >= 2 ? 2 : 0
+  if (natNewPct > natCurPct) {
+    tags.push({ label: `${candidate.nationality} ${natNewCount}`, pct: natNewPct - natCurPct, type: 'nation' })
+  }
+
+  // Coach delta
+  if (assignedCoach && assignedCoach.clubs.includes(candidate.club)) {
+    tags.push({ label: '🎯', pct: 5, type: 'coach' })
+  }
+
+  return tags
+}
+
 type PanelMode = 'idle' | 'pick' | 'stats'
 
 export function Team() {
@@ -200,7 +251,7 @@ export function Team() {
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
   const pickerPlayers = useMemo(() => {
-    if (!activeSlotDef) return [] as (Footballer & { _totalDelta: number })[]
+    if (!activeSlotDef) return [] as (Footballer & { _totalDelta: number; _breakdown: ChemBreakdownTag[] })[]
     return footballers
       .filter(f => f.position === activeSlotDef.pos && ownedIds.has(f.id))
       .map(f => {
@@ -210,7 +261,11 @@ export function Team() {
           : 0
         const hasCoachChem = !inSquad && assignedCoachObj !== null && assignedCoachObj.clubs.includes(f.club)
         const coachChemDelta = hasCoachChem ? 5 : 0
-        return { ...f, _totalDelta: chemDelta + coachChemDelta } as Footballer & { _totalDelta: number }
+        return {
+          ...f,
+          _totalDelta: chemDelta + coachChemDelta,
+          _breakdown: inSquad || activeSlot === null ? [] : computeChemistryBreakdown(squad, activeSlot, f.id, assignedCoachObj)
+        } as Footballer & { _totalDelta: number; _breakdown: ChemBreakdownTag[] }
       })
       .sort((a, b) => playerOverall(b) - playerOverall(a))
   }, [activeSlotDef, ownedIds, squad, activeSlot, assignedCoachObj])
@@ -783,7 +838,6 @@ export function Team() {
                           const inSquad = squad.includes(f.id)
                           const overall = playerOverall(f)
                           const totalDelta = f._totalDelta
-                          const hasCoachChem = !inSquad && assignedCoachObj !== null && assignedCoachObj.clubs.includes(f.club)
                           return (
                             <button
                               key={f.id}
@@ -794,21 +848,11 @@ export function Team() {
                                   ? 'border-[#1A2336] opacity-35 cursor-not-allowed'
                                   : totalDelta > 0
                                     ? 'border-[#FBBF24]/40 bg-[#FBBF24]/5 hover:border-[#FBBF24]/70 hover:bg-[#FBBF24]/10 cursor-pointer active:scale-95'
-                                    : hasCoachChem
-                                      ? 'border-[#FBBF24]/30 bg-[#FBBF24]/5 hover:border-[#FBBF24]/50 cursor-pointer active:scale-95'
+                                    : f._breakdown.length > 0
+                                      ? 'border-[#5A7090]/30 bg-[#5A7090]/5 hover:border-[#5A7090]/50 cursor-pointer active:scale-95'
                                       : 'border-[#1A2336] hover:border-[#00E676]/60 hover:bg-[#00E676]/5 cursor-pointer active:scale-95'
                               }`}
                             >
-                              {totalDelta > 0 && (
-                                <div className="absolute -top-1.5 -right-1.5 bg-[#FBBF24] text-[#04060A] text-[9px] font-oswald font-bold px-1.5 py-0.5 rounded-full leading-none z-10">
-                                  +{totalDelta}%
-                                </div>
-                              )}
-                              {hasCoachChem && (
-                                <div className="absolute -top-2 -left-2 text-lg z-10 drop-shadow-md" title="Хімія з тренером">
-                                  🎯
-                                </div>
-                              )}
                               <div className={`w-11 h-11 rounded-full overflow-hidden bg-black/40 ring-1 ${rarityRing[f.rarity]}`}>
                                 <PlayerPhoto footballer={f} />
                               </div>
@@ -818,6 +862,26 @@ export function Team() {
                               <div className="text-xs text-center text-[#5A7090]">{f.club}</div>
                               <div className="text-xs text-center text-[#5A7090]">{f.nationality}</div>
                               <div className="text-[10px] font-oswald font-bold text-[#00E676]">{overall}</div>
+                              {f._breakdown.length > 0 && (
+                                <div className="w-full flex flex-col items-start gap-0.5 mt-0.5">
+                                  {f._breakdown.map((tag, ti) => (
+                                    <div
+                                      key={ti}
+                                      className={`text-[9px] font-oswald font-bold leading-none ${
+                                        tag.type === 'club' ? 'text-[#00E676]'
+                                          : 'text-[#FBBF24]'
+                                      }`}
+                                    >
+                                      {tag.label}→+{tag.pct}%
+                                    </div>
+                                  ))}
+                                  <div className={`text-[9px] font-oswald font-bold self-end leading-none ${
+                                    totalDelta > 0 ? 'text-white' : 'text-[#5A7090]'
+                                  }`}>
+                                    +{totalDelta}%
+                                  </div>
+                                </div>
+                              )}
                             </button>
                           )
                         })}
