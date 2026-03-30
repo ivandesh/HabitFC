@@ -872,9 +872,19 @@ export function Team() {
                     </div>
                   )
                 }
+                // Compute chemistry for each coach against current squad
+                const coachesWithChem = ownedCoaches.map(c => {
+                  const chemPct = computeCoachChemistryPct(c, filledPlayers)
+                  const matchCount = filledPlayers.filter(f => c.clubs.includes(f.club)).length
+                  return { coach: c, chemPct, matchCount }
+                })
+                // Sort: highest chemistry first, then alphabetically by name
+                coachesWithChem.sort((a, b) =>
+                  b.chemPct - a.chemPct || a.coach.name.localeCompare(b.coach.name)
+                )
                 return (
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                    {ownedCoaches.map(c => {
+                    {coachesWithChem.map(({ coach: c, chemPct: cPct, matchCount }) => {
                       const lvl = getCoachLevel(c.id, coachCollection)
                       const isActive = assignedCoach === c.id
                       return (
@@ -884,6 +894,11 @@ export function Team() {
                           className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
                         >
                           <CoachCard coach={c} level={lvl} mini={false} showPerk />
+                          {cPct > 0 && (
+                            <div className="px-3 pb-2 -mt-1 text-[10px] font-oswald font-bold text-[#FBBF24]">
+                              ⚡ {matchCount} гравців → +{cPct}% хімія
+                            </div>
+                          )}
                         </button>
                       )
                     })}
