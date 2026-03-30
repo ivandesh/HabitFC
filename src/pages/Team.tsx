@@ -989,11 +989,11 @@ export function Team() {
                         <button
                           key={c.id}
                           onClick={() => { assignCoachAction(viewedTeam.id, c.id); setCoachPickerOpen(false) }}
-                          className={`rounded-xl overflow-hidden border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
+                          className={`rounded-xl border-2 transition-all cursor-pointer ${isActive ? 'border-[#FBBF24]' : 'border-[#FBBF24]/20 hover:border-[#FBBF24]/50'}`}
                         >
                           <CoachCard coach={c} level={lvl} mini={false} showPerk />
                           {cPct > 0 && (
-                            <div className="px-3 pb-2 -mt-1 text-[10px] font-oswald font-bold text-[#FBBF24]">
+                            <div className="px-3 pb-2 text-[10px] font-oswald font-bold text-[#FBBF24]">
                               ⚡ {matchCount} гравців → +{cPct}% хімія
                             </div>
                           )}

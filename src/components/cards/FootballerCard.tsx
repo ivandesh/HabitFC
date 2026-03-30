@@ -1,5 +1,7 @@
-import type { Footballer } from '../../types'
+import type { Footballer, Position } from '../../types'
 import { rarityConfig } from '../../lib/rarityConfig'
+
+const POS_UA: Record<Position, string> = { GK: 'ВОР', DEF: 'ЗАХ', MID: 'ПЗА', FWD: 'НАП' }
 
 interface Props {
   footballer: Footballer
@@ -51,6 +53,7 @@ export function FootballerCard({ footballer, owned, mini = false }: Props) {
         <div className="font-bold text-sm sm:text-lg leading-tight">{footballer.name}</div>
         <div className="text-xs sm:text-sm text-gray-400">{footballer.club}</div>
         <div className="text-[10px] sm:text-xs text-gray-500">{footballer.nationality}</div>
+        <div className="text-[10px] sm:text-xs font-oswald font-bold text-gray-400 mt-0.5">{POS_UA[footballer.position]}</div>
       </div>
       <div className="w-full grid grid-cols-2 gap-1 text-xs">
         <div className="flex justify-between bg-gray-900/50 rounded px-1 py-0.5 sm:px-2 sm:py-1">
