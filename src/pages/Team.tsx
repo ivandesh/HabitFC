@@ -136,6 +136,7 @@ export function Team() {
 
   const [activeSlot, setActiveSlot] = useState<number | null>(null)
   const [panelMode, setPanelMode] = useState<PanelMode>('idle')
+  const [pickerSort, setPickerSort] = useState<'rating' | 'chemistry'>('rating')
 
   const formationDef = FORMATIONS[formation] ?? FORMATIONS['4-3-3']
   const SLOTS = formationDef.slots
@@ -199,11 +200,29 @@ export function Team() {
   const activeSlotDef = activeSlot !== null ? SLOTS[activeSlot] : null
 
   const pickerPlayers = useMemo(() => {
-    if (!activeSlotDef) return []
+    if (!activeSlotDef) return [] as (Footballer & { _totalDelta: number })[]
     return footballers
       .filter(f => f.position === activeSlotDef.pos && ownedIds.has(f.id))
+      .map(f => {
+        const inSquad = squad.includes(f.id)
+        const chemDelta = !inSquad && activeSlot !== null
+          ? computeChemistryDelta(squad, activeSlot, f.id)
+          : 0
+        const hasCoachChem = !inSquad && assignedCoachObj !== null && assignedCoachObj.clubs.includes(f.club)
+        const coachChemDelta = hasCoachChem ? 5 : 0
+        return { ...f, _totalDelta: chemDelta + coachChemDelta } as Footballer & { _totalDelta: number }
+      })
       .sort((a, b) => playerOverall(b) - playerOverall(a))
-  }, [activeSlotDef, ownedIds])
+  }, [activeSlotDef, ownedIds, squad, activeSlot, assignedCoachObj])
+
+  const sortedPickerPlayers = useMemo(() => {
+    if (pickerSort === 'rating') return pickerPlayers
+    return [...pickerPlayers].sort((a, b) => {
+      const deltaSort = b._totalDelta - a._totalDelta
+      if (deltaSort !== 0) return deltaSort
+      return playerOverall(b) - playerOverall(a)
+    })
+  }, [pickerPlayers, pickerSort])
 
   function handleSlotClick(idx: number) {
     const footballerId = squad[idx] ?? null
@@ -247,6 +266,7 @@ export function Team() {
   function closePanel() {
     setActiveSlot(null)
     setPanelMode('idle')
+    setPickerSort('rating')
   }
 
   const activePlayer = activeSlot !== null && panelMode === 'stats'
@@ -727,13 +747,31 @@ export function Team() {
                           <span className="text-[#5A7090] font-normal text-base ml-2">— позиція {activeSlot + 1}</span>
                         </div>
                       </div>
-                      <button
-                        onClick={closePanel}
-                        className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
-                      >×</button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setPickerSort('rating')}
+                          className={`text-[9px] font-oswald font-bold uppercase px-2 py-1 rounded-lg transition-colors cursor-pointer ${
+                            pickerSort === 'rating'
+                              ? 'bg-[#00E676]/20 text-[#00E676]'
+                              : 'text-[#5A7090] hover:text-white'
+                          }`}
+                        >⭐ Рейтинг</button>
+                        <button
+                          onClick={() => setPickerSort('chemistry')}
+                          className={`text-[9px] font-oswald font-bold uppercase px-2 py-1 rounded-lg transition-colors cursor-pointer ${
+                            pickerSort === 'chemistry'
+                              ? 'bg-[#FBBF24]/20 text-[#FBBF24]'
+                              : 'text-[#5A7090] hover:text-white'
+                          }`}
+                        >🔗 Хімія</button>
+                        <button
+                          onClick={closePanel}
+                          className="w-8 h-8 flex items-center justify-center text-[#5A7090] hover:text-white hover:bg-[#1A2336] rounded-lg transition-colors text-xl cursor-pointer"
+                        >×</button>
+                      </div>
                     </div>
 
-                    {pickerPlayers.length === 0 ? (
+                    {sortedPickerPlayers.length === 0 ? (
                       <div className="text-center py-8 text-[#5A7090]">
                         <div className="text-4xl mb-3">🔒</div>
                         <div className="font-oswald text-sm text-white">Немає карток на цю позицію</div>
@@ -741,15 +779,11 @@ export function Team() {
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
-                        {pickerPlayers.map(f => {
+                        {sortedPickerPlayers.map(f => {
                           const inSquad = squad.includes(f.id)
                           const overall = playerOverall(f)
-                          const chemDelta = !inSquad && activeSlot !== null
-                            ? computeChemistryDelta(squad, activeSlot, f.id)
-                            : 0
+                          const totalDelta = f._totalDelta
                           const hasCoachChem = !inSquad && assignedCoachObj !== null && assignedCoachObj.clubs.includes(f.club)
-                          const coachChemDelta = hasCoachChem ? 5 : 0
-                          const totalDelta = chemDelta + coachChemDelta
                           return (
                             <button
                               key={f.id}
